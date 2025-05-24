@@ -1,0 +1,40 @@
+openapi: 3.0.3
+info:
+  title: Health Check API
+  description: Simple health check endpoint
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+    description: Development server
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns the health status of the application
+      operationId: healthCheck
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Application is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "UP"
+          description: Current health status of the service
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-05-24T12:00:00Z"
+          description: Current server time
