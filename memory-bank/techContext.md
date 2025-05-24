@@ -17,15 +17,39 @@
 
 ## Technology Stack
 ### Core Technologies
-- **Backend Framework:** [Framework name and version]
-- **Frontend Framework:** [Framework name and version]
-- **Database:** [Database system and version]
-- **Programming Languages:** [Languages and versions]
+- **Backend Framework:** Spring Boot 3.5.0
+- **Database:** PostgreSQL 16.9
+- **Programming Languages:** Kotlin 1.9.25, Java 17
+- **Build Tool:** Gradle 8.13
+
+### Database & ORM
+- **Database System:** PostgreSQL 16.9
+- **ORM Framework:** JOOQ 3.19.3
+- **Database Migration:** Flyway 9.16.1
+  - Migration Location: `src/main/resources/db/migration`
+  - Schema: `public`
+  - Migration Table: `flyway_schema_history`
+  - Clean Disabled: `true` (safety measure)
+  - Baseline on Migrate: `true`
+
+#### JOOQ Configuration
+- **Version:** 3.19.3 (OSS Edition)
+- **Generated Code Location:** `build/generated/jooq`
+- **Target Package:** `com.ecommerce.infrastructure.jooq`
+- **Key Features:**
+  - Record Generation
+  - Immutable POJOs
+  - Fluent Setters
+  - Kotlin Data Classes
+  - Java Time Types
 
 ### Dependencies
 #### Runtime Dependencies
-- [Dependency 1]: [Version] - [Purpose]
-- [Dependency 2]: [Version] - [Purpose]
+- `org.springframework.boot:spring-boot-starter-jooq` - JOOQ integration for Spring Boot
+- `org.jooq:jooq:3.19.3` - JOOQ core library
+- `org.postgresql:postgresql:42.6.0` - PostgreSQL JDBC driver
+- `org.flywaydb:flyway-core` - Database migration tool
+- `com.fasterxml.jackson.module:jackson-module-kotlin` - Kotlin support for Jackson
 
 #### Development Dependencies
 - [Dependency 1]: [Version] - [Purpose]
