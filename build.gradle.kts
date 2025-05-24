@@ -73,7 +73,7 @@ jooq {
                         isFluentSetters = true
                     }
                     target.apply {
-                        packageName = "com.ecommerce.infrastructure.jooq"
+                        packageName = "com.biding.infrastructure.jooq"
                         directory = "build/generated/jooq"
                     }
                     strategy.name = "org.jooq.codegen.DefaultGeneratorStrategy"

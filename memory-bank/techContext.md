@@ -4,6 +4,7 @@
 **Status:** [DRAFT]  
 **Author:** [Your Name]  
 **Last Modified:** 2025-05-24
+**Last Updated By:** Cascade AI Assistant
 
 ## Table of Contents
 - [Technology Stack](#technology-stack)
@@ -23,14 +24,19 @@
 - **Build Tool:** Gradle 8.13
 
 ### Database & ORM
-- **Database System:** PostgreSQL 16.9
+- **Database System:** PostgreSQL 15.13 (downgraded from 16.9 for compatibility)
 - **ORM Framework:** JOOQ 3.19.3
-- **Database Migration:** Flyway 9.16.1
+- **Database Migration:** Flyway 9.16.1 (temporarily disabled)
   - Migration Location: `src/main/resources/db/migration`
   - Schema: `public`
   - Migration Table: `flyway_schema_history`
   - Clean Disabled: `true` (safety measure)
   - Baseline on Migrate: `true`
+
+### Important Notes
+- **Flyway Compatibility Issue:** Flyway 9.16.1 has compatibility issues with PostgreSQL 15.13. As a temporary solution, Flyway auto-configuration has been disabled in the application.
+- **PostgreSQL Version:** Downgraded from 16.9 to 15.13 to maintain compatibility with available tooling.
+- **Health Check Endpoint:** Successfully implemented at `/api/v1/health` with basic status monitoring.
 
 #### JOOQ Configuration
 - **Version:** 3.19.3 (OSS Edition)
