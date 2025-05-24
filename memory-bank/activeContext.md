@@ -12,9 +12,18 @@
 - Finalize API documentation
 - Set up rate limiting for registration endpoint
 - Enhance error handling and logging
+- Monitor timestamp handling in production
+- Document timestamp handling patterns for future reference
 
 ## Recent Changes
-### 2025-05-24
+### 2025-05-24 - Timestamp Handling
+- Fixed timestamp conversion between database and domain models
+- Implemented proper handling of `OffsetDateTime` in database operations
+- Added robust error handling for timestamp conversions
+- Ensured consistent timezone handling across the application
+- Added comprehensive logging for timestamp-related operations
+
+### 2025-05-24 - User Registration
 - Implemented user registration API with phone number validation
 - Added duplicate phone number prevention
 - Set up OpenAPI documentation for the registration endpoint
@@ -26,6 +35,13 @@
 - Added input validation using Jakarta Bean Validation
 
 ## Key Decisions
+### 2025-05-24 - Timestamp Handling
+**Issue/Context:** Need to handle timestamps consistently between database and domain model  
+**Decision:** Use `OffsetDateTime` for database operations and convert to/from `Instant` in domain model  
+**Rationale:** Ensures timezone awareness in database while maintaining clean domain model  
+**Impact:** More robust timestamp handling with proper timezone support  
+**Status:** Implemented
+
 ### 2025-05-24 - User Registration Design
 **Issue/Context:** Need to implement user registration with phone number verification  
 **Decision:** Implemented E.164 format validation and duplicate prevention  

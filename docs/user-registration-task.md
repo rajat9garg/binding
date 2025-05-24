@@ -4,13 +4,20 @@
 User registration functionality has been implemented to allow users to register using their phone number and name. The system prevents duplicate registrations based on phone numbers and includes comprehensive input validation.
 
 ## Implementation Status
-- **Overall Progress**: 85% Complete
+- **Overall Progress**: 90% Complete
 - **Last Updated**: 2025-05-24
-- **Current Version**: 1.0.0
+- **Current Version**: 1.1.0
+- **Recent Updates**:
+  - Implemented robust timestamp handling
+  - Added database operation error handling
+  - Improved logging and monitoring
 
 ## Tech Stack Context
 - **Framework**: Spring Boot 3.5.0 with Kotlin 1.9.25
 - **Database**: PostgreSQL 15.13 with JOOQ 3.19.3
+  - Timestamp Handling: `OffsetDateTime` for database operations
+  - Timezone: UTC for all timestamps
+  - Type-safe queries with explicit type casting
 - **Migrations**: Flyway 9.16.1 (temporarily disabled for development)
 - **Validation**: Jakarta Bean Validation 3.0
 - **Documentation**: SpringDoc OpenAPI with generated API documentation
@@ -173,6 +180,38 @@ CREATE INDEX idx_users_email ON users(email) WHERE email IS NOT NULL;
 - [x] Code documentation
 - [x] Setup instructions
 - [x] Error code reference
+
+## Timestamp Handling
+
+### Implementation Details
+1. **Database Layer**
+   - Uses `OffsetDateTime` for all timestamp columns
+   - Ensures timezone awareness in database operations
+   - Explicit type casting in JOOQ queries
+
+2. **Domain Layer**
+   - Uses `Instant` for all timestamp fields
+   - Conversion happens in the repository layer
+   - Ensures clean domain model without timezone concerns
+
+3. **API Layer**
+   - Returns timestamps in ISO-8601 format with timezone offset
+   - Example: `2025-05-24T11:30:00Z`
+
+4. **Error Handling**
+   - Validates timestamp formats
+   - Handles timezone conversions consistently
+   - Provides meaningful error messages for timestamp-related issues
+
+### Example Repository Code
+```kotlin
+// Convert database OffsetDateTime to domain Instant
+val createdAt = record.get(DSL.field("created_at", OffsetDateTime::class.java))?.toInstant()
+    ?: throw IllegalStateException("created_at cannot be null")
+
+// Convert domain Instant to database OffsetDateTime
+val now = OffsetDateTime.now(ZoneOffset.UTC)
+```
 
 ### Domain Model Implementation
 ```kotlin

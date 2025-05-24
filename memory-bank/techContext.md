@@ -30,6 +30,11 @@
   - Type-safe SQL queries
   - Generated DAOs for database access
   - Kotlin DSL support
+  - **Timestamp Handling:**
+    - Uses `OffsetDateTime` for all database operations
+    - Converts to/from domain `Instant` in repository layer
+    - Explicit type casting for timestamp fields
+    - Consistent timezone handling (UTC)
 - **Database Migration:** Flyway 9.16.1
   - Migration Location: `src/main/resources/db/migration`
   - Schema: `public`

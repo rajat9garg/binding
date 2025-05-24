@@ -3,7 +3,7 @@
 **Created:** 2025-05-24  
 **Last Updated:** 2025-05-24  
 **Last Updated By:** Cascade AI Assistant  
-**Related Components:** User Registration, API Design, Database, ORM, Validation, Spring Boot
+**Related Components:** User Registration, API Design, Database, ORM, Validation, Spring Boot, Timestamp Handling
 
 ## User Registration Implementation
 
@@ -117,6 +117,29 @@
    - **Lesson:** Use MockK for idiomatic Kotlin mocking
    - **Example:** Mocked repository in service tests
    - **Best Practice:** Focus on behavior, not implementation details
+
+## Timestamp Handling
+
+### Database Timestamps
+1. **Time Zone Handling**
+   - **Lesson:** PostgreSQL stores timestamps in UTC by default but can return them in different formats
+   - **Example:** Use `OffsetDateTime` for database operations and convert to/from `Instant` in the domain layer
+   - **Best Practice:** Consistently handle time zones across the application
+
+2. **Type Conversion**
+   - **Lesson:** Explicitly handle type conversion between database and domain models
+   - **Example:** Convert `OffsetDateTime` to `Instant` when mapping database records to domain objects
+   - **Best Practice:** Centralize conversion logic in repository layer
+
+3. **Default Values**
+   - **Lesson:** Set default timestamps in the database or application code
+   - **Example:** Use `java.time.OffsetDateTime.now()` for current timestamp in database operations
+   - **Best Practice:** Be consistent with timestamp generation across the application
+
+4. **Query Results**
+   - **Lesson:** JOOQ may return different timestamp types based on database driver
+   - **Example:** Always cast timestamp fields explicitly in queries
+   - **Best Practice:** Test timestamp handling with real database queries
 
 ### Health Check Implementation
 1. **Basic Health Check**
