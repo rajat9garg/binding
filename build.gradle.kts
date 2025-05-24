@@ -8,7 +8,7 @@ plugins {
     id("org.flywaydb.flyway") version "9.16.1"
 }
 
-group = "learn.ai"
+group = "com.biding"
 version = "0.0.1-SNAPSHOT"
 
 java {
@@ -88,8 +88,8 @@ openApiGenerate {
     generatorName.set("kotlin-spring")
     inputSpec.set("$rootDir/src/main/resources/openapi/api.yaml")
     outputDir.set(layout.buildDirectory.dir("generated/openapi").get().asFile.absolutePath)
-    apiPackage.set("${project.group}.generated.api")
-    modelPackage.set("${project.group}.generated.model")
+    apiPackage.set("com.biding.generated.api")
+    modelPackage.set("com.biding.generated.model")
     configOptions.set(
         mapOf(
             "interfaceOnly" to "true",
@@ -110,14 +110,21 @@ openApiGenerate {
     )
 }
 
-// Add generated sources to the source sets
-sourceSets.main {
-    kotlin {
-        srcDirs(
-            layout.buildDirectory.dir("generated/jooq"),
-            layout.buildDirectory.dir("generated/openapi/src/main/kotlin")
-        )
+// Source sets for generated code
+sourceSets {
+    main {
+        java {
+            srcDirs(
+                "${buildDir}/generated/openapi/src/main/kotlin",
+                "${buildDir}/generated/jooq"
+            )
+        }
     }
+}
+
+// Ensure OpenAPI generation happens before compilation
+tasks.compileKotlin {
+    dependsOn("openApiGenerate")
 }
 
 // Ensure code generation tasks run before compilation

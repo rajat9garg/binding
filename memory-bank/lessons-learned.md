@@ -3,7 +3,25 @@
 **Created:** 2025-05-24  
 **Last Updated:** 2025-05-24  
 **Last Updated By:** Cascade AI Assistant  
-**Related Components:** Database, ORM, Build Configuration, Spring Boot
+**Related Components:** User Registration, API Design, Database, ORM, Validation, Spring Boot
+
+## User Registration Implementation
+
+### API Design
+1. **DTO Pattern**
+   - **Lesson:** Clear separation between API contracts and domain models improves maintainability
+   - **Example:** Used separate DTOs for request/response in user registration
+   - **Best Practice:** Always validate DTOs at the API boundary
+
+2. **Validation**
+   - **Lesson:** Jakarta Bean Validation provides powerful declarative validation
+   - **Example:** Used `@Pattern` for phone number validation
+   - **Best Practice:** Create custom validators for complex validation rules
+
+3. **Error Handling**
+   - **Lesson:** Consistent error responses improve client experience
+   - **Example:** Implemented `@ControllerAdvice` for global exception handling
+   - **Best Practice:** Include error codes and user-friendly messages
 
 ## Database & ORM Configuration
 
@@ -48,6 +66,17 @@
    - Enable Kotlin data classes with `isImmutablePojos = true`
    - Use `isFluentSetters = true` for better Kotlin integration
 
+### Domain Modeling
+1. **Rich Domain Models**
+   - **Lesson:** Encapsulate business logic in domain objects
+   - **Example:** Moved validation logic to the User domain class
+   - **Best Practice:** Keep domain models free from infrastructure concerns
+
+2. **Value Objects**
+   - **Lesson:** Use value objects for domain concepts (e.g., PhoneNumber)
+   - **Example:** Created PhoneNumber value object with validation
+   - **Best Practice:** Make value objects immutable
+
 ### Build Configuration
 1. **Gradle Setup**
    - Use the correct plugin version (we used `nu.studer.jooq` version `7.1`)
@@ -72,6 +101,23 @@
 
 ## Spring Boot Integration
 
+### Transaction Management
+1. **@Transactional Usage**
+   - **Lesson:** Be explicit about transaction boundaries
+   - **Example:** Used `@Transactional` at service layer
+   - **Best Practice:** Keep transactions as short as possible
+
+### Testing
+1. **Test Containers**
+   - **Lesson:** Use Testcontainers for integration tests
+   - **Example:** Added PostgreSQL container for repository tests
+   - **Best Practice:** Test against real database in integration tests
+
+2. **Mocking**
+   - **Lesson:** Use MockK for idiomatic Kotlin mocking
+   - **Example:** Mocked repository in service tests
+   - **Best Practice:** Focus on behavior, not implementation details
+
 ### Health Check Implementation
 1. **Basic Health Check**
    - Implemented at `/api/v1/health`
@@ -92,6 +138,17 @@
      ```
 
 ## Best Practices
+
+### API Design
+1. **RESTful Principles**
+   - Use proper HTTP methods and status codes
+   - Example: 201 Created for successful registration
+   - Include Location header for created resources
+
+2. **Versioning**
+   - Version your API from the start
+   - Example: `/api/v1/users/register`
+   - Plan for backward compatibility
 
 ### Database Design
 1. **Schema Versioning**
@@ -128,6 +185,40 @@
      - Solution: Check `includes`/`excludes` patterns in JOOQ configuration
    - Problem: Type mismatches
      - Solution: Configure custom data type bindings if needed
+
+## Performance Considerations
+
+1. **Database Indexing**
+   - **Lesson:** Indexes are crucial for query performance
+   - **Example:** Added index on `phone_number` for fast lookups
+   - **Best Practice:** Analyze query patterns and add indexes accordingly
+
+2. **Connection Pooling**
+   - **Lesson:** Proper connection pool configuration is essential
+   - **Example:** Configured HikariCP with optimal pool size
+   - **Best Practice:** Monitor connection pool metrics in production
+
+3. **DTO Projection**
+   - **Lesson:** Select only needed columns in queries
+   - **Example:** Used JOOQ's `select()` to specify fields
+   - **Best Practice:** Avoid `select *` in production queries
+
+## Security Considerations
+
+1. **Input Validation**
+   - **Lesson:** Validate all user inputs
+   - **Example:** Used Bean Validation with custom constraints
+   - **Best Practice:** Validate early, validate often
+
+2. **Error Messages**
+   - **Lesson:** Be careful with error messages
+   - **Example:** Generic messages in production, detailed in dev
+   - **Best Practice:** Don't leak system details in error responses
+
+3. **Rate Limiting**
+   - **Lesson:** Protect registration endpoints
+   - **Example:** Planning to implement rate limiting
+   - **Best Practice:** Use existing libraries (e.g., Spring Cloud Gateway)
 
 3. **Build Configuration**
    - Problem: Build fails with configuration errors

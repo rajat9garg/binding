@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Health Check API
-  description: Simple health check endpoint
+  title: Bidding Platform API
+  description: API for the online bidding platform
   version: 1.0.0
 
 servers:
@@ -23,6 +23,45 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
+  
+  /users/register:
+    post:
+      summary: Register a new user
+      description: Register a new user with phone number and name
+      operationId: registerUser
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Phone number already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Too many registration attempts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
 
 components:
   schemas:
@@ -38,3 +77,104 @@ components:
           format: date-time
           example: "2025-05-24T12:00:00Z"
           description: Current server time
+
+    UserRegistrationRequest:
+      type: object
+      required:
+        - phoneNumber
+        - name
+      properties:
+        phoneNumber:
+          type: string
+          example: "+1234567890"
+          pattern: '^\+[1-9]\d{1,14}$'
+          description: User's phone number in E.164 format
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: "John Doe"
+          pattern: '^[a-zA-Z\s-]+$'
+          description: User's full name (2-100 characters, letters, spaces, and hyphens only)
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: "john.doe@example.com"
+          description: User's email address (optional)
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+          description: Unique identifier of the user
+        phoneNumber:
+          type: string
+          example: "+1234567890"
+          description: User's phone number
+        name:
+          type: string
+          example: "John Doe"
+          description: User's full name
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: "john.doe@example.com"
+          description: User's email address
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-05-24T12:00:00Z"
+          description: When the user was created
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-05-24T12:00:00Z"
+          description: When the user was last updated
+
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: integer
+          format: int32
+          example: 400
+          description: HTTP status code
+        error:
+          type: string
+          example: "VALIDATION_ERROR"
+          description: Error type
+        message:
+          type: string
+          example: "Invalid input data"
+          description: Human-readable error message
+        path:
+          type: string
+          example: "/api/v1/users/register"
+          description: Request path
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-05-24T12:00:00Z"
+          description: When the error occurred
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          description: Additional error details (optional)
+
+    ValidationError:
+      type: object
+      properties:
+        field:
+          type: string
+          example: "phoneNumber"
+          description: The field that failed validation
+        error:
+          type: string
+          example: "must be a valid E.164 phone number"
+          description: The validation error message

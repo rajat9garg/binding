@@ -1,8 +1,8 @@
 # Technical Context
 
 **Created:** 2025-05-24  
-**Status:** [DRAFT]  
-**Author:** [Your Name]  
+**Status:** [ACTIVE]  
+**Author:** Cascade AI Assistant  
 **Last Modified:** 2025-05-24
 **Last Updated By:** Cascade AI Assistant
 
@@ -19,53 +19,84 @@
 ## Technology Stack
 ### Core Technologies
 - **Backend Framework:** Spring Boot 3.5.0
-- **Database:** PostgreSQL 16.9
-- **Programming Languages:** Kotlin 1.9.25, Java 17
+- **Database:** PostgreSQL 15.13
+- **Programming Languages:** Kotlin 1.9.25, Java 21
 - **Build Tool:** Gradle 8.13
+- **API Documentation:** OpenAPI 3.0.3
 
 ### Database & ORM
-- **Database System:** PostgreSQL 15.13 (downgraded from 16.9 for compatibility)
+- **Database System:** PostgreSQL 15.13
 - **ORM Framework:** JOOQ 3.19.3
-- **Database Migration:** Flyway 9.16.1 (temporarily disabled)
+  - Type-safe SQL queries
+  - Generated DAOs for database access
+  - Kotlin DSL support
+- **Database Migration:** Flyway 9.16.1
   - Migration Location: `src/main/resources/db/migration`
   - Schema: `public`
   - Migration Table: `flyway_schema_history`
   - Clean Disabled: `true` (safety measure)
   - Baseline on Migrate: `true`
+- **Database Schema:**
+  - `users` table with fields: id, phone_number, name, email, created_at, updated_at
+  - Indexes on phone_number for fast lookups
+
+### API Layer
+- **RESTful Endpoints:**
+  - `POST /api/v1/users/register` - Register a new user
+- **Request/Response Formats:**
+  - Request: JSON with phone_number, name, and optional email
+  - Response: JSON with user details and timestamps
+- **Validation:**
+  - Phone number validation (E.164 format)
+  - Name validation (2-100 characters)
+  - Optional email validation
+- **Error Handling:**
+  - 400 Bad Request for validation errors
+  - 409 Conflict for duplicate phone numbers
+  - 500 Internal Server Error for unexpected errors
 
 ### Important Notes
-- **Flyway Compatibility Issue:** Flyway 9.16.1 has compatibility issues with PostgreSQL 15.13. As a temporary solution, Flyway auto-configuration has been disabled in the application.
-- **PostgreSQL Version:** Downgraded from 16.9 to 15.13 to maintain compatibility with available tooling.
-- **Health Check Endpoint:** Successfully implemented at `/api/v1/health` with basic status monitoring.
+- **Flyway Compatibility:** Configured to work with PostgreSQL 15.13
+- **Health Check Endpoint:** Implemented at `/api/v1/health` with database connectivity check
+- **OpenAPI Documentation:** Available at `/v3/api-docs` and `/swagger-ui.html`
 
 #### JOOQ Configuration
 - **Version:** 3.19.3 (OSS Edition)
 - **Generated Code Location:** `build/generated/jooq`
-- **Target Package:** `com.ecommerce.infrastructure.jooq`
+- **Target Package:** `com.biding.infrastructure.jooq`
 - **Key Features:**
   - Record Generation
   - Immutable POJOs
   - Fluent Setters
   - Kotlin Data Classes
   - Java Time Types
+  - Custom data type bindings for Kotlin types
 
 ### Dependencies
 #### Runtime Dependencies
-- `org.springframework.boot:spring-boot-starter-jooq` - JOOQ integration for Spring Boot
+- `org.springframework.boot:spring-boot-starter-web` - Spring Web MVC
+- `org.springframework.boot:spring-boot-starter-validation` - Bean Validation
+- `org.springframework.boot:spring-boot-starter-jooq` - JOOQ integration
 - `org.jooq:jooq:3.19.3` - JOOQ core library
 - `org.postgresql:postgresql:42.6.0` - PostgreSQL JDBC driver
-- `org.flywaydb:flyway-core` - Database migration tool
-- `com.fasterxml.jackson.module:jackson-module-kotlin` - Kotlin support for Jackson
+- `org.flywaydb:flyway-core:9.16.1` - Database migrations
+- `com.fasterxml.jackson.module:jackson-module-kotlin` - Kotlin JSON support
+- `org.springdoc:springdoc-openapi-starter-webmvc-ui:2.1.0` - OpenAPI documentation
+- `org.jetbrains.kotlin:kotlin-reflect` - Kotlin reflection
 
 #### Development Dependencies
-- [Dependency 1]: [Version] - [Purpose]
-- [Dependency 2]: [Version] - [Purpose]
+- `org.springframework.boot:spring-boot-starter-test` - Testing support
+- `io.mockk:mockk:1.13.4` - Mocking library for Kotlin
+- `org.testcontainers:postgresql:1.17.6` - Test containers for integration tests
+- `org.testcontainers:junit-jupiter:1.17.6` - JUnit 5 support for Testcontainers
 
 ## Development Environment
 ### Prerequisites
-- [Software 1] (vX.Y.Z)
-- [Software 2] (vX.Y.Z)
-- [CLI Tools] (vX.Y.Z)
+- Java 21 JDK (e.g., Amazon Corretto 21)
+- Docker Desktop 4.15.0+
+- Gradle 8.13
+- IntelliJ IDEA or VS Code with Kotlin plugin
+- PostgreSQL 15.13 (or Docker)
 
 ### Setup Instructions
 1. Clone the repository
