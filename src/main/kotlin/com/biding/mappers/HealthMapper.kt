@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component
 class HealthMapper {
     fun toApiResponse(domain: DomainHealthResponse): ApiHealthResponse {
         return ApiHealthResponse(
-            status = domain.status,
+            status = ApiHealthResponse.Status.valueOf(domain.status),
             timestamp = domain.timestamp,
         )
     }

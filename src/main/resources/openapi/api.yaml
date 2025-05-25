@@ -23,7 +23,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
-  
+
   /users/register:
     post:
       summary: Register a new user
@@ -49,59 +49,177 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiError'
-        '409':
-          description: Phone number already registered
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /items:
+    get:
+      tags: [Items]
+      summary: Search items
+      operationId: searchItems
+      description: Search and filter auction items with pagination
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+        - $ref: '#/components/parameters/statusFilter'
+        - $ref: '#/components/parameters/minPriceFilter'
+        - $ref: '#/components/parameters/maxPriceFilter'
+      responses:
+        '200':
+          description: Successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiError'
-        '429':
-          description: Too many registration attempts
+                $ref: '#/components/schemas/ItemPageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Items]
+      summary: Create a new item
+      operationId: createItem
+      description: Create a new auction item listing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateItemRequest'
+      responses:
+        '201':
+          description: Item created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/ItemResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /items/{id}:
+    parameters:
+      - $ref: '#/components/parameters/itemId'
+    get:
+      tags: [Items]
+      summary: Get item by ID
+      operationId: getItem
+      description: Retrieve an item by its unique identifier
+      responses:
+        '200':
+          description: Item found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Items]
+      summary: Update an item
+      operationId: updateItem
+      description: Update an existing item listing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateItemRequest'
+      responses:
+        '200':
+          description: Item updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
 components:
+  parameters:
+    itemId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    page:
+      name: page
+      in: query
+      description: Page number (0-based)
+      required: false
+      schema:
+        type: integer
+        default: 0
+        minimum: 0
+    size:
+      name: size
+      in: query
+      description: Number of items per page
+      required: false
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+    statusFilter:
+      name: status
+      in: query
+      description: Filter items by status
+      required: false
+      schema:
+        type: string
+        enum: [DRAFT, UPCOMING, ONGOING, ENDED, CANCELLED]
+    minPriceFilter:
+      name: minPrice
+      in: query
+      description: Minimum price filter
+      required: false
+      schema:
+        type: number
+        format: decimal
+    maxPriceFilter:
+      name: maxPrice
+      in: query
+      description: Maximum price filter
+      required: false
+      schema:
+        type: number
+        format: decimal
+
   schemas:
     HealthResponse:
       type: object
       properties:
         status:
           type: string
-          example: "UP"
-          description: Current health status of the service
+          enum: [UP, DOWN]
         timestamp:
           type: string
           format: date-time
-          example: "2025-05-24T12:00:00Z"
-          description: Current server time
 
     UserRegistrationRequest:
       type: object
       required:
-        - phoneNumber
         - name
+        - phoneNumber
       properties:
-        phoneNumber:
-          type: string
-          example: "+1234567890"
-          pattern: '^\+[1-9]\d{1,14}$'
-          description: User's phone number in E.164 format
         name:
           type: string
           minLength: 2
-          maxLength: 100
-          example: "John Doe"
-          pattern: '^[a-zA-Z\s-]+$'
-          description: User's full name (2-100 characters, letters, spaces, and hyphens only)
-        email:
+          maxLength: 50
+        phoneNumber:
           type: string
-          format: email
-          nullable: true
-          example: "john.doe@example.com"
-          description: User's email address (optional)
+          pattern: '^[+]?[0-9]{10,15}$'
 
     UserResponse:
       type: object
@@ -109,72 +227,180 @@ components:
         id:
           type: integer
           format: int64
-          example: 1
-          description: Unique identifier of the user
-        phoneNumber:
-          type: string
-          example: "+1234567890"
-          description: User's phone number
         name:
           type: string
-          example: "John Doe"
-          description: User's full name
-        email:
+        phoneNumber:
           type: string
-          format: email
-          nullable: true
-          example: "john.doe@example.com"
-          description: User's email address
         createdAt:
           type: string
           format: date-time
-          example: "2025-05-24T12:00:00Z"
-          description: When the user was created
+
+    ItemResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        basePrice:
+          type: number
+          format: decimal
+        currentBid:
+          type: number
+          format: decimal
+        status:
+          type: string
+          enum: [DRAFT, UPCOMING, ONGOING, ENDED, CANCELLED]
+        auctionStartTime:
+          type: string
+          format: date-time
+        auctionEndTime:
+          type: string
+          format: date-time
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemImage'
+        createdAt:
+          type: string
+          format: date-time
         updatedAt:
           type: string
           format: date-time
-          example: "2025-05-24T12:00:00Z"
-          description: When the user was last updated
+        version:
+          type: integer
+          format: int64
+        createdBy:
+          type: integer
+          format: int64
 
-    ApiError:
+    ItemImage:
       type: object
       properties:
-        status:
+        id:
           type: integer
-          format: int32
-          example: 400
-          description: HTTP status code
-        error:
+          format: int64
+        imageUrl:
           type: string
-          example: "VALIDATION_ERROR"
-          description: Error type
-        message:
+        isPrimary:
+          type: boolean
+        displayOrder:
+          type: integer
+
+    CreateItemRequest:
+      type: object
+      required:
+        - name
+        - basePrice
+        - auctionStartTime
+        - auctionEndTime
+      properties:
+        name:
           type: string
-          example: "Invalid input data"
-          description: Human-readable error message
-        path:
+          minLength: 1
+          maxLength: 200
+        description:
           type: string
-          example: "/api/v1/users/register"
-          description: Request path
-        timestamp:
+        basePrice:
+          type: number
+          format: decimal
+          minimum: 0
+        auctionStartTime:
           type: string
           format: date-time
-          example: "2025-05-24T12:00:00Z"
-          description: When the error occurred
+        auctionEndTime:
+          type: string
+          format: date-time
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+
+    UpdateItemRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        status:
+          type: string
+          enum: [DRAFT, UPCOMING, CANCELLED]
+        auctionStartTime:
+          type: string
+          format: date-time
+        auctionEndTime:
+          type: string
+          format: date-time
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+
+    ItemPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemResponse'
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        last:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
         details:
           type: array
           items:
-            $ref: '#/components/schemas/ValidationError'
-          description: Additional error details (optional)
+            type: string
+        timestamp:
+          type: string
+          format: date-time
 
-    ValidationError:
-      type: object
-      properties:
-        field:
-          type: string
-          example: "phoneNumber"
-          description: The field that failed validation
-        error:
-          type: string
-          example: "must be a valid E.164 phone number"
-          description: The validation error message
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Operation not allowed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

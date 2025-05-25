@@ -1,0 +1,527 @@
+-------------------- OPENAPI RULES --------------------
+---
+trigger: always_on
+---
+
+# OpenAPI Specification (OAS) Guidelines
+
+## File Structure
+- Store OpenAPI specifications in: `src/main/resources/openapi/`
+- Main specification file must be named: `api.yaml`
+- Split large specs into multiple files using `$ref`
+- Keep all schema definitions in a `schemas/` subdirectory
+
+## Naming Conventions
+- Use kebab-case for file names
+- Use snake_case for schema property names
+- Use UPPER_SNAKE_CASE for constants
+- Use PascalCase for schema names
+
+## Specification Format
+```yaml
+openapi: 3.0.3
+info:
+  title: Service Name API
+  description: API documentation
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+  license:
+    name: Proprietary
+servers:
+  - url: /api/v1
+    description: Production server
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns 200 OK if the service is running properly
+      operationId: healthCheck
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "UP"
+          description: Current health status of the service
+```
+
+## Versioning
+- Include API version in the URL path (e.g., `/api/v1/health`)
+- Use semantic versioning (MAJOR.MINOR.PATCH)
+- Document breaking changes in release notes
+- Support at least the current and previous major versions
+
+## Documentation Standards
+### Required Elements
+- Clear, concise endpoint descriptions
+- All request/response schemas with field-level documentation
+- HTTP status codes and their meanings
+- Examples with realistic data
+- Request/response content types (e.g., application/json)
+- Required vs. optional fields clearly marked
+
+### Best Practices
+- Use markdown for rich text formatting
+- Include examples for all schemas
+- Document all possible error responses
+- Use consistent terminology
+- Keep descriptions under 200 characters when possible
+
+## Code Generation
+### Configuration
+```kotlin
+plugins {
+    id("org.openapi.generator") version "6.6.0"
+}
+
+openApiGenerate {
+    generatorName.set("kotlin-spring")
+    inputSpec.set("$rootDir/src/main/resources/openapi/api.yaml")
+    outputDir.set("$buildDir/generated")
+    modelPackage.set("${project.group}.generated.model")
+    apiPackage.set("${project.group}.generated.api")
+    configOptions.set(
+        mapOf(
+            "interfaceOnly" to "true",
+            "useSpringBoot3" to "true",
+            "useBeanValidation" to "true",
+            "documentationProvider" to "none"
+        )
+    )
+}
+
+sourceSets.main {
+    java.srcDirs("$buildDir/generated/src/main/kotlin")
+}
+
+tasks.compileKotlin {
+    dependsOn("openApiGenerate")
+}
+```
+
+## Required Endpoints
+### Health Endpoint
+- The API specification must ONLY include a health endpoint
+- No other sample APIs, resources, or endpoints should be defined
+- The health endpoint should return a 200 OK response
+- Implement a controller and service class for the health endpoint
+- Do not implement any security or authentication mechanisms
+
+## Best Practices
+### General
+- Keep the spec DRY (Don't Repeat Yourself)
+- Use `$ref` for reusable components
+- Document all fields with descriptions and examples
+- Use consistent naming conventions
+- Include examples for all schemas
+- Document default values for optional parameters
+
+### Implementation Rules
+- DO NOT create any sample APIs or additional endpoints
+- DO NOT add security or authentication mechanisms
+- ONLY implement the health endpoint as specified above
+
+-------------------- SPRING BOOT RULES --------------------
+---
+trigger: always_on
+---
+
+# Spring Boot Rules
+
+## General Rules
+- All application development MUST utilize the Spring Boot framework
+- All RESTful APIs exposed by the application MUST be synchronous (blocking)
+- Use `spring-boot-starter-web` dependency
+- DO NOT use `spring-boot-starter-webflux`
+- All project dependencies MUST be managed via Gradle
+- Externalize all configurations using `application.yml` files or environment variables
+- NEVER hardcode sensitive information
+
+## Spring Boot Specifics
+- Use Spring Boot starters for quick project setup and dependency management
+- Implement proper use of annotations (e.g., `@SpringBootApplication`, `@RestController`, `@Service`)
+- Utilize Spring Boot's auto-configuration features effectively
+- Implement proper exception handling using `@ControllerAdvice` and `@ExceptionHandler`
+- Keep controllers thin; business logic belongs in services
+
+## Configuration and Properties
+- Use `application.yml` over `application.properties` for better structure
+- Implement environment-specific configurations using Spring Profiles
+- Use `@ConfigurationProperties` for type-safe configuration properties
+- Keep configuration organized by concern
+- Use environment variables with default values for all configuration properties
+- Follow UPPER_SNAKE_CASE naming convention for environment variables
+- Never commit sensitive data in configuration files
+
+## Dependency Injection and IoC
+- Use constructor injection over field injection for better testability
+- Properly scope beans (`@Singleton`, `@Prototype`, etc.)
+- Use appropriate stereotypes (`@Service`, `@Repository`, `@Component`, `@Controller`)
+- Avoid circular dependencies
+- Document complex dependency graphs with `@Qualifier`
+
+## Testing
+- Write unit tests using JUnit 5 and Spring Boot Test
+- Follow AAA pattern (Arrange-Act-Assert) in tests
+- Use MockK for mocking in Kotlin tests
+- Implement integration tests using `@SpringBootTest`
+- Use TestContainers for database tests
+- Test edge cases and error conditions
+- Create test-specific properties in `application-test.yml`
+- Use test profiles for different scenarios
+- NO TEST cases for Controller and Database layers
+
+## Security
+- DO NOT USE ANY SPRING SECURITY
+- DO NOT USE ANY KIND OF SECURITY
+- DO NOT IMPORT SPRING SECURITY DEPENDENCIES
+
+## Logging and Monitoring
+- Use SLF4J with Logback for logging
+- Implement proper log levels (ERROR, WARN, INFO, DEBUG)
+- Don't log sensitive information
+- Use Spring Boot Actuator for application monitoring and metrics
+- Implement structured logging with JSON format
+- Use correlation IDs for request tracing
+- Configure log rotation and retention policy
+
+## Error Handling
+- Implement comprehensive exception handling
+- Create custom exceptions for domain-specific errors
+- Provide meaningful error messages
+- Standardize error response format across all exception handlers
+- Include request paths in log messages for better traceability
+- Generate unique error IDs for unexpected exceptions
+- Structure field errors in a consistent, readable format
+
+-------------------- KOTLIN RULES --------------------
+---
+trigger: always_on
+---
+
+# Kotlin Language Rules
+
+## Overview
+You are an expert in Kotlin programming and related JVM technologies.
+
+## Kotlin-Specific Best Practices
+- Prefer `val` over `var` to create immutable references
+- Utilize Kotlin's null safety features to prevent null pointer exceptions
+- Use data classes for DTOs and immutable data structures
+- Leverage Kotlin's extension functions to enhance existing classes without inheritance
+- Use sealed classes for representing restricted class hierarchies
+- Implement Kotlin's scope functions (`let`, `apply`, `run`, `with`, `also`) appropriately
+- Leverage Kotlin's coroutines for asynchronous programming
+- Use constructor-based dependency injection
+- Use destructuring declarations where appropriate
+- Prefer immutable collections when possible
+- Use sequence for large collection processing
+- Utilize inline functions for higher-order functions
+- Use reified type parameters when needed
+- Leverage delegation pattern with 'by' keyword
+- Use companion objects appropriately
+- Implement operator overloading judiciously
+
+## Naming Conventions
+- Use PascalCase for class names (e.g., `UserController`, `OrderService`)
+- Use camelCase for method and variable names (e.g., `findUserById`, `isOrderValid`)
+- Use ALL_CAPS for constants (e.g., `MAX_RETRY_ATTEMPTS`, `DEFAULT_PAGE_SIZE`)
+- Use meaningful and descriptive names that reflect purpose
+- Prefix interface names with 'I' only when there's a class with the same name
+- Use verb phrases for function names (e.g., `calculateTotal`, `processPayment`)
+- Use noun phrases for properties and variables (e.g., `userName`, `orderTotal`)
+
+## Code Structure
+- Keep functions small and focused on a single responsibility
+- Limit function parameters (consider using data classes for multiple parameters)
+- Use expression bodies for simple functions
+- Organize code with extensions in separate files by receiver type
+- Group related properties and functions together
+- Use proper package structure to organize code
+- Follow SOLID principles to ensure code is maintainable and extensible
+
+## Kotlin Coroutines
+- Use the appropriate dispatcher (IO for I/O operations, Default for CPU-intensive tasks)
+- Properly handle exceptions in coroutines with try-catch or supervisorScope
+- Use structured concurrency with coroutineScope
+- Cancel coroutines when no longer needed
+- Use Flow for asynchronous streams of data
+- Apply backpressure with buffer, conflate, or collectLatest when needed
+- Use withContext for changing context without creating new coroutines
+- Avoid using runBlocking in production code
+- Use async/await for parallel decomposition
+
+## Kotlin Coroutines Testing
+- Use runTest for testing suspend functions in unit tests
+- Properly wrap assertions that test suspending functions with runBlocking when needed
+- Ensure mock setup is compatible with coroutine execution
+- Always mock ALL method calls that will occur during test execution, including chained calls
+- For each mocked method that returns a value used later in the service, explicitly define behavior with `every { ... } returns ...`
+- Verify all important mock interactions with `verify(exactly = n) { ... }`
+
+-------------------- DATABASE RULES --------------------
+---
+trigger: always_on
+---
+
+# PostgreSQL Usage Rules
+
+## General Principles
+- Use Jooq for all database interactions
+- Implement proper transaction management
+- Use connection pooling
+- Follow proper indexing strategies
+- Implement proper error handling
+
+## Jooq for Database API Calls
+- All database queries (SELECT), DML (INSERT, UPDATE, DELETE), and dynamic DDL MUST use Jooq
+- Generate type-safe Kotlin classes using Jooq's code generation
+- Wrap synchronous Jooq calls within `withContext(Dispatchers.IO)`
+- Handle database-specific errors appropriately
+- Manage DSLContext properly via dependency injection
+- Use Jooq's transaction management or Spring's `@Transactional`
+
+## Flyway for Database Migrations
+- Manage all schema changes and data migrations using Flyway
+- Create versioned SQL scripts following `V<VERSION>__<DESCRIPTION>.sql` naming
+- Make scripts idempotent where possible
+- Keep DDL changes backward-compatible for zero-downtime deployments
+- Store migration scripts in `src/main/resources/db/migration`
+- Review all new/modified Flyway scripts before merging
+- Use `flyway.baseline` only for initializing existing databases
+- Use `flyway.repair` with caution and supervision
+
+## Build Configuration
+### Flyway Plugin
+```gradle
+plugins {
+    id "org.flywaydb.flyway" version "9.16.1"
+}
+```
+
+### Jooq Configuration
+```gradle
+plugins {
+    id "nu.studer.jooq" version "7.0"
+}
+
+jooq {
+    version = '3.16.5'  // Match Jooq library version
+    edition = nu.studer.gradle.jooq.JooqEdition.OSS
+
+    configurations {
+        main {
+            generationTool {
+                jdbc {
+                    driver = 'org.postgresql.Driver'
+                    url = 'jdbc:postgresql://localhost:5432/yourdb'
+                    user = 'user'
+                    password = 'password'
+                }
+                generator {
+                    name = 'org.jooq.codegen.KotlinGenerator'
+                    database {
+                        inputSchema = 'public'
+                    }
+                    generate {
+                        pojos = true
+                        daos = true
+                        relations = true
+                        records = true
+                        routines = true
+                        kotlinSetterGetters = true
+                    }
+                    target {
+                        packageName = 'com.your.package.generated'
+                        directory = 'build/generated-src/jooq/main'
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+## Testing
+- No test cases for database layer
+
+-------------------- DOCKER RULES --------------------
+---
+trigger: always_on
+---
+
+# Docker Configuration Rules
+
+## Pre-generation Prompt
+Always ask the user before generating:
+- What technologies, services, or dependencies to include
+- If multiple services are needed
+
+## General Guidelines
+- Do not include the application service in the Docker Compose file
+- Configure all requested infrastructure services
+- Set up all required ports and expose them
+- Include all connection credentials and environment variables
+- Support multiple instances of the same service type
+- Ensure services are ready with health checks
+- Document all exposed variables, ports, and service names
+
+## Service Dependencies
+- Use `depends_on` with `condition: service_healthy` for startup sequencing
+- Include health checks for each service
+
+## Environment Variables
+- Use environment variables for all service configuration
+- Provide default values using `${VARIABLE:-default}` syntax
+- Document environment variables in the `docker-compose.yml` file
+
+## Volumes
+- Use named volumes for data persistence
+- Define volume mounts for configuration/logs if required
+
+## Health Checks
+- Configure health checks with appropriate interval, timeout, and start_period
+- Use correct protocol and target port
+- Ensure health checks reliably indicate service readiness
+
+## Network Configuration
+- Use custom user-defined networks for isolating services
+- Configure `network_aliases` for easier internal access
+- Expose only required ports to the host machine
+- Use internal networks for inter-service communication
+
+## Security Best Practices
+- Do not store secrets in Docker images or version-controlled files
+- Use Docker secrets or environment variables for sensitive data
+- Pin versions for all service images (avoid `latest`)
+- Run containers as non-root users where possible
+- Limit container capabilities and use read-only file systems
+- Ensure logs are enabled for all services
+
+-------------------- MEMORY BANK RULES --------------------
+---
+trigger: always_on
+---
+
+# Memory Bank Setup Rules
+
+## Directory Structure
+```
+memory-bank/
+├── projectVision.md
+├── projectbrief.md
+├── productContext.md
+├── activeContext.md
+├── systemPatterns.md
+├── techContext.md
+└── progress.md
+```
+
+## File Content & Guidelines
+
+### Project Vision
+- **File**: `projectVision.md`
+- **Content**: Mission, vision, strategic goals, timelines, differentiators, impact, success metrics
+- **Focus**: Aspirational outcomes and strategic direction
+- **No**: Technical details
+- **Update When**: Strategic direction, market conditions, or metrics change
+
+### Project Brief
+- **File**: `projectbrief.md`
+- **Content**: Technical requirements, stack, project structure, setup, timeline, phases
+- **Focus**: User needs and business value
+- **No**: Visionary statements or technical solutions
+- **Update When**: New features, scope changes, or technology stack changes
+
+### Product Context
+- **File**: `productContext.md`
+- **Content**: Problem statements, market analysis, user needs, experience goals, feature requirements
+- **Focus**: User needs and business value
+- **No**: Technical solutions
+- **Update When**: New features, scope changes, or technology stack changes
+
+### Active Context
+- **File**: `activeContext.md`
+- **Content**: Current focus, priorities, recent changes, decisions, next steps/action items
+- **Focus**: Actual work status
+- **No**: Historical decisions or speculation
+- **Update When**: Daily for status, completed work, and metrics
+
+### System Patterns
+- **File**: `systemPatterns.md`
+- **Content**: Architecture patterns, decisions, component relationships, integration patterns
+- **Focus**: System design
+- **No**: Implementation details or premature specifics
+- **Update When**: Design patterns, boundaries, or dependencies shift
+
+### Technical Context
+- **File**: `techContext.md`
+- **Content**: Technology stack and versions, development setup, prerequisites, infrastructure configuration
+- **Focus**: Agreed-upon technology with clear justification
+- **No**: Business requirements or assumptions
+- **Update When**: Dependencies, tools, or scaling requirements change
+
+### Progress
+- **File**: `progress.md`
+- **Content**: Current status, metrics, completed work, and issues
+- **Focus**: Verifiable metrics
+- **No**: Future plans or speculation
+- **Update When**: Daily for status, completed work, and metrics
+
+## Additional Documentation
+- `successCriteria.md`: Measurable business outcomes, KPIs, acceptance criteria
+- `userPersonas.md`: User characteristics, needs, pain points
+- `componentDesign.md`: Logical component structure and relationships
+- `dataModels.md`: Logical data structures and relationships
+- `apiContracts.md`: Business requirements for APIs and data flow
+- `testingStrategy.md`: Agreed-upon testing approaches and requirements
+- `decisionLog.md`: Documented architectural and technical decisions
+- `openQuestions.md`: Documented uncertainties and research requirements
+
+## General Content Guidelines
+- **Vision Files**: Business value, strategic outcomes, quantifiable metrics
+- **Requirements Files**: Strictly business-focused, no technical solutions
+- **Architecture Files**: High-level design, based on requirements
+- **Technical Files**: Only agreed-upon decisions with clear justification
+- **Tracking Files**: Document actual decisions and progress
+
+## Setup & Maintenance
+- **Complete Traceability**: All changes link to requirements
+- **Living Documentation**: Evolves with the project
+- **Single Source of Truth**: Consolidated knowledge
+- **Context Preservation**: Document decisions and reasoning
+- **Knowledge Transfer**: Enables quick team onboarding
+- **Continuous Reflection**: Regular review and refinement
+
+## File Templates & Formatting
+- Include header with creation date and purpose
+- Add table of contents for files >500 words
+- Use consistent Markdown with H2/H3 hierarchy
+- Use cross-reference links with relative paths
+- Include status indicators: `[DRAFT]`, `[REVIEW]`, `[APPROVED]`
+- Add author attribution and last modified timestamp
+
+## Initialization Checklist
+1. Create directory structure exactly as specified
+2. Initialize each file with required sections
+3. Set up Git with semantic versioning
+4. Configure cross-reference linking
+5. Add file headers with metadata
+6. Populate initial content based on project
+7. Establish review and approval workflows
+8. Create backup and versioning strategy
+9. Document file ownership/responsibilities
+10. Schedule regular review cycles

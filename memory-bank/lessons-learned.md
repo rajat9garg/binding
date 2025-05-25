@@ -2,102 +2,102 @@
 
 **Created:** 2025-05-24  
 **Last Updated:** 2025-05-24  
-**Last Updated By:** Cascade AI Assistant  
-**Related Components:** User Registration, API Design, Database, ORM, Validation, Spring Boot, Timestamp Handling
+**Last Updated By:** Bidding Platform Team  
+**Related Components:** Auction System, API Design, Database, ORM, Validation, Spring Boot, Real-time Bidding
 
-## User Registration Implementation
+## Auction System Implementation
 
 ### API Design
-1. **DTO Pattern**
-   - **Lesson:** Clear separation between API contracts and domain models improves maintainability
-   - **Example:** Used separate DTOs for request/response in user registration
-   - **Best Practice:** Always validate DTOs at the API boundary
+1. **RESTful Endpoints**
+   - **Lesson:** Clear, consistent endpoint structure improves API usability
+   - **Example:** `/api/v1/auctions/{id}/bids` for bid management
+   - **Best Practice:** Follow REST conventions and use HTTP methods appropriately
 
-2. **Validation**
-   - **Lesson:** Jakarta Bean Validation provides powerful declarative validation
-   - **Example:** Used `@Pattern` for phone number validation
-   - **Best Practice:** Create custom validators for complex validation rules
+2. **Real-time Bidding**
+   - **Lesson:** WebSockets provide efficient real-time communication
+   - **Example:** Implemented STOMP over WebSockets for bid updates
+   - **Best Practice:** Handle connection drops and reconnection logic
 
-3. **Error Handling**
-   - **Lesson:** Consistent error responses improve client experience
-   - **Example:** Implemented `@ControllerAdvice` for global exception handling
-   - **Best Practice:** Include error codes and user-friendly messages
+3. **Validation**
+   - **Lesson:** Domain-specific validation rules are crucial for auction integrity
+   - **Example:** Minimum bid increment validation
+   - **Best Practice:** Validate both at API and domain levels
+
+4. **Idempotency**
+   - **Lesson:** Critical for bid submission to prevent duplicate processing
+   - **Example:** Implemented idempotency keys for bid requests
+   - **Best Practice:** Use idempotency keys for all mutating operations
 
 ## Database & ORM Configuration
 
-### Flyway Configuration
-1. **Version Compatibility**
-   - **Lesson:** Flyway 9.16.1 has compatibility issues with PostgreSQL 15.13
-   - **Solution:** Temporarily disabled Flyway auto-configuration in `application.yml` and `@SpringBootApplication`
-   - **Best Practice:** Always verify Flyway version compatibility with your PostgreSQL version before implementation
+### JOOQ for Auction System
+1. **Complex Query Handling**
+   - **Lesson:** JOOQ excels at complex auction queries (e.g., active listings, bid history)
+   - **Example:** Used JOOQ's DSL for time-based auction queries
+   - **Best Practice:** Create reusable query components
 
-2. **Migration File Naming**
-   - Always use the correct naming convention: `V{version}__{description}.sql`
-   - Double underscores are required in the filename
-   - Example: `V1__create_users_table.sql`
+2. **Type-Safe SQL**
+   - **Lesson:** Catch SQL errors at compile time
+   - **Example:** Generated Kotlin types for auction tables
+   - **Best Practice:** Regenerate code after schema changes
 
-3. **Migration Location**
-   - Default location is `src/main/resources/db/migration`
-   - Can be customized in `build.gradle.kts` but requires explicit configuration
+3. **Transaction Management**
+   - **Lesson:** Critical for bid processing
+   - **Example:** `@Transactional` with proper isolation levels
+   - **Best Practice:** Keep transactions short and focused
 
-4. **Clean Operation**
-   - Disable clean by default in production (`cleanDisabled = true`)
-   - Always test migrations in a development environment first
+4. **JSONB Support**
+   - **Lesson:** Store flexible auction metadata
+   - **Example:** Item details as JSONB
+   - **Best Practice:** Define JSON schemas for complex fields
 
-### JOOQ Configuration
-1. **Dependency Management**
-   - Ensure the JOOQ version matches between the plugin and runtime dependencies
-   - Add PostgreSQL JDBC driver to both runtime and JOOQ generator classpaths
-   - **Lesson:** Use `implementation` for runtime dependencies and `jooqCodegen` for code generation dependencies
-   - **Example:**
-     ```kotlin
-     dependencies {
-         implementation("org.postgresql:postgresql:42.6.0")
-         jooqCodegen("org.postgresql:postgresql:42.6.0")
-     }
-     ```
+### Performance Optimization
+1. **Bid Processing**
+   - **Lesson:** Optimistic locking for high concurrency
+   - **Example:** Version column for bid updates
+   - **Best Practice:** Handle `OptimisticLockException`
 
-2. **Code Generation**
-   - Run `./gradlew clean generateJooq` after schema changes
-   - Generated code goes to `build/generated/jooq` by default
-   - Configure the target package for generated code in `build.gradle.kts`
+2. **Caching Strategy**
+   - **Lesson:** Cache frequently accessed auction data
+   - **Example:** Cached active auctions with TTL
+   - **Best Practice:** Invalidate cache on state changes
 
-3. **Kotlin Support**
-   - Enable Kotlin data classes with `isImmutablePojos = true`
-   - Use `isFluentSetters = true` for better Kotlin integration
+3. **Database Indexing**
+   - **Lesson:** Critical for auction queries
+   - **Example:** Indexes on `end_time`, `status`
+   - **Best Practice:** Monitor query performance
 
-### Domain Modeling
-1. **Rich Domain Models**
-   - **Lesson:** Encapsulate business logic in domain objects
-   - **Example:** Moved validation logic to the User domain class
-   - **Best Practice:** Keep domain models free from infrastructure concerns
+### Domain Modeling for Auctions
+1. **Auction State Management**
+   - **Lesson:** Explicit state machine prevents invalid transitions
+   - **Example:** `DRAFT -> SCHEDULED -> ACTIVE -> COMPLETED/CANCELLED`
+   - **Best Practice:** Use enums for state representation
 
 2. **Value Objects**
-   - **Lesson:** Use value objects for domain concepts (e.g., PhoneNumber)
-   - **Example:** Created PhoneNumber value object with validation
-   - **Best Practice:** Make value objects immutable
+   - **Lesson:** Strong typing for domain concepts
+   - **Example:** `Money` for currency handling
+   - **Best Practice:** Validate invariants in constructors
 
-### Build Configuration
-1. **Gradle Setup**
-   - Use the correct plugin version (we used `nu.studer.jooq` version `7.1`)
-   - Configure JOOQ tasks in the `jooq` block
-   - Ensure proper task dependencies (e.g., `generateJooq` should run after `flywayMigrate`)
-   - **Lesson:** When Flyway is disabled, ensure database schema is manually created before JOOQ code generation
-   - **Example:**
-     ```kotlin
-     tasks.named<org.jooq.meta.jaxb.Generate>("generateJooq") {
-         // Disable Flyway dependency when Flyway is disabled
-         if (!project.hasProperty("disableFlyway") || project.property("disableFlyway") != "true") {
-             dependsOn("flywayMigrate")
-         } else {
-             logger.lifecycle("Skipping Flyway migration as it's disabled")
-         }
-     }
-     ```
+3. **Aggregate Roots**
+   - **Lesson:** Clear boundaries for auction operations
+   - **Example:** `Auction` as aggregate root for bids
+   - **Best Practice:** Reference by ID across aggregates
 
-2. **Error Handling**
-   - Common error: `ClassNotFoundException` for JDBC driver - ensure it's in the correct configuration
-   - Check Gradle logs with `--info` or `--debug` for detailed error information
+### Build and Deployment
+1. **CI/CD Pipeline**
+   - **Lesson:** Automated testing is crucial
+   - **Example:** GitHub Actions for build/test/deploy
+   - **Best Practice:** Test database migrations
+
+2. **Containerization**
+   - **Lesson:** Consistent environments
+   - **Example:** Multi-stage Docker builds
+   - **Best Practice:** Small container images
+
+3. **Configuration Management**
+   - **Lesson:** Environment-specific configs
+   - **Example:** Spring profiles
+   - **Best Practice:** Externalize configuration
 
 ## Spring Boot Integration
 
@@ -113,10 +113,29 @@
    - **Example:** Added PostgreSQL container for repository tests
    - **Best Practice:** Test against real database in integration tests
 
+## Testing Strategies
+
+### Unit Testing
+1. **Domain Logic**
+   - **Lesson:** Test domain rules in isolation
+   - **Example:** Auction state transitions
+   - **Best Practice:** Use property-based testing
+
 2. **Mocking**
    - **Lesson:** Use MockK for idiomatic Kotlin mocking
-   - **Example:** Mocked repository in service tests
-   - **Best Practice:** Focus on behavior, not implementation details
+   - **Example:** Mocked bid repository
+   - **Best Practice:** Verify interactions
+
+### Integration Testing
+1. **Test Containers**
+   - **Lesson:** Real database testing
+   - **Example:** PostgreSQL test container
+   - **Best Practice:** Reuse containers
+
+2. **API Testing**
+   - **Lesson:** Test API contracts
+   - **Example:** REST Assured
+   - **Best Practice:** Test error cases
 
 ## Timestamp Handling
 
@@ -238,10 +257,34 @@
    - **Example:** Generic messages in production, detailed in dev
    - **Best Practice:** Don't leak system details in error responses
 
+## Production Readiness
+
+### Monitoring and Observability
+1. **Metrics**
+   - **Lesson:** Track key auction metrics
+   - **Example:** Bids per second
+   - **Best Practice:** Use Micrometer
+
+2. **Logging**
+   - **Lesson:** Structured logging
+   - **Example:** JSON logs with correlation IDs
+   - **Best Practice:** Include request context
+
 3. **Rate Limiting**
-   - **Lesson:** Protect registration endpoints
-   - **Example:** Planning to implement rate limiting
-   - **Best Practice:** Use existing libraries (e.g., Spring Cloud Gateway)
+   - **Lesson:** Protect bid submission
+   - **Example:** Redis-based rate limiting
+   - **Best Practice:** Gradual rollout
+
+### Security
+1. **Authentication**
+   - **Lesson:** JWT for API auth
+   - **Example:** Role-based access
+   - **Best Practice:** Short-lived tokens
+
+2. **Data Protection**
+   - **Lesson:** Encrypt sensitive data
+   - **Example:** PII encryption
+   - **Best Practice:** Regular audits
 
 3. **Build Configuration**
    - Problem: Build fails with configuration errors

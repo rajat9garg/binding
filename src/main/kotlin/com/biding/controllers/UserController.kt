@@ -29,7 +29,6 @@ class UserController(
             val user = User(
                 phoneNumber = userRegistrationRequest.phoneNumber,
                 name = userRegistrationRequest.name,
-                email = userRegistrationRequest.email
             )
             
             println("[DEBUG] Calling userService.registerUser")
@@ -41,9 +40,7 @@ class UserController(
                 id = savedUser.id ?: throw IllegalStateException("User ID should not be null after save"),
                 phoneNumber = savedUser.phoneNumber,
                 name = savedUser.name,
-                email = savedUser.email,
                 createdAt = savedUser.createdAt.atOffset(ZoneOffset.UTC),
-                updatedAt = savedUser.updatedAt.atOffset(ZoneOffset.UTC)
             )
             
             val location: URI = ServletUriComponentsBuilder

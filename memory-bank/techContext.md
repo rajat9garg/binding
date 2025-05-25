@@ -21,15 +21,17 @@
 - **Backend Framework:** Spring Boot 3.5.0
 - **Database:** PostgreSQL 15.13
 - **Programming Languages:** Kotlin 1.9.25, Java 21
-- **Build Tool:** Gradle 8.13
+- **Build Tool:** Gradle 8.13 (Kotlin DSL)
 - **API Documentation:** OpenAPI 3.0.3
+- **Code Generation:** OpenAPI Generator 6.6.0
+- **Dependency Management:** Gradle Version Catalog
 
 ### Database & ORM
 - **Database System:** PostgreSQL 15.13
 - **ORM Framework:** JOOQ 3.19.3
-  - Type-safe SQL queries
-  - Generated DAOs for database access
-  - Kotlin DSL support
+  - Type-safe SQL queries with Kotlin DSL
+  - Generated DAOs and POJOs
+  - Custom type bindings for Kotlin types
   - **Timestamp Handling:**
     - Uses `OffsetDateTime` for all database operations
     - Converts to/from domain `Instant` in repository layer
@@ -42,22 +44,35 @@
   - Clean Disabled: `true` (safety measure)
   - Baseline on Migrate: `true`
 - **Database Schema:**
-  - `users` table with fields: id, phone_number, name, email, created_at, updated_at
-  - Indexes on phone_number for fast lookups
+  - `items` table: Core auction items with fields for title, description, status, etc.
+  - `bids` table: Tracks all bids placed on items
+  - `users` table: User management
+  - Appropriate indexes and foreign key constraints
 
 ### API Layer
 - **RESTful Endpoints:**
-  - `POST /api/v1/users/register` - Register a new user
+  - `GET /api/v1/items` - List all auction items (paginated)
+  - `GET /api/v1/items/{id}` - Get item details
+  - `POST /api/v1/items` - Create new auction item
+  - `PUT /api/v1/items/{id}` - Update auction item
+  - `DELETE /api/v1/items/{id}` - Delete auction item
+  - `POST /api/v1/items/{id}/bids` - Place a bid
+
 - **Request/Response Formats:**
-  - Request: JSON with phone_number, name, and optional email
-  - Response: JSON with user details and timestamps
+  - Request/Response: JSON with appropriate DTOs
+  - Pagination support with `page`, `size`, and `sort` parameters
+  - Consistent error response format
+
 - **Validation:**
-  - Phone number validation (E.164 format)
-  - Name validation (2-100 characters)
-  - Optional email validation
+  - Bean Validation (JSR-380)
+  - Custom validators for business rules
+  - Input sanitization
+
 - **Error Handling:**
+  - Global exception handler with consistent error responses
   - 400 Bad Request for validation errors
-  - 409 Conflict for duplicate phone numbers
+  - 404 Not Found for non-existent resources
+  - 409 Conflict for business rule violations
   - 500 Internal Server Error for unexpected errors
 
 ### Important Notes
@@ -79,26 +94,79 @@
 
 ### Dependencies
 #### Runtime Dependencies
-- `org.springframework.boot:spring-boot-starter-web` - Spring Web MVC
-- `org.springframework.boot:spring-boot-starter-validation` - Bean Validation
-- `org.springframework.boot:spring-boot-starter-jooq` - JOOQ integration
-- `org.jooq:jooq:3.19.3` - JOOQ core library
-- `org.postgresql:postgresql:42.6.0` - PostgreSQL JDBC driver
-- `org.flywaydb:flyway-core:9.16.1` - Database migrations
-- `com.fasterxml.jackson.module:jackson-module-kotlin` - Kotlin JSON support
-- `org.springdoc:springdoc-openapi-starter-webmvc-ui:2.1.0` - OpenAPI documentation
-- `org.jetbrains.kotlin:kotlin-reflect` - Kotlin reflection
+- **Spring Boot Starters**
+  - `spring-boot-starter-web` - Web MVC support
+  - `spring-boot-starter-validation` - Bean Validation
+  - `spring-boot-starter-jooq` - JOOQ integration
+  - `spring-boot-starter-data-jpa` - JPA support (for repository abstraction)
+
+- **Database**
+  - `jooq` - Type-safe SQL queries
+  - `postgresql` - PostgreSQL JDBC driver
+  - `flyway-core` - Database migrations
+  - `h2` - In-memory database for tests
+
+- **Kotlin**
+  - `kotlin-stdlib-jdk8`
+  - `kotlin-reflect`
+  - `jackson-module-kotlin` - JSON support
+
+- **API Documentation**
+  - `springdoc-openapi-starter-webmvc-ui` - OpenAPI 3.0 documentation
+  - `springdoc-openapi-kotlin` - Kotlin support for OpenAPI
+
+- **Utilities**
+  - `hibernate-types-60` - Custom Hibernate types
+  - `kotlin-logging` - Kotlin logging utilities
 
 #### Development Dependencies
-- `org.springframework.boot:spring-boot-starter-test` - Testing support
-- `io.mockk:mockk:1.13.4` - Mocking library for Kotlin
-- `org.testcontainers:postgresql:1.17.6` - Test containers for integration tests
-- `org.testcontainers:junit-jupiter:1.17.6` - JUnit 5 support for Testcontainers
+- **Testing**
+  - `spring-boot-starter-test` - Core testing support
+  - `mockk` - Mocking library for Kotlin
+  - `testcontainers` - Container-based testing
+  - `junit-jupiter` - JUnit 5 support
+  - `kotlin-test` - Kotlin test utilities
+
+- **Code Quality**
+  - `detekt` - Static code analysis
+  - `ktlint` - Kotlin linter
+  - `jacoco` - Code coverage
+
+- **Build Tools**
+  - `openapi-generator-gradle-plugin` - API client generation
+  - `jooq-codegen` - JOOQ code generation
+  - `spring-boot-gradle-plugin` - Spring Boot support
 
 ## Development Environment
 ### Prerequisites
-- Java 21 JDK (e.g., Amazon Corretto 21)
-- Docker Desktop 4.15.0+
+- **Java 21 JDK** (Amazon Corretto 21 recommended)
+- **Docker Desktop** 4.15.0+
+- **Gradle** 8.13 (included in wrapper)
+- **PostgreSQL** 15.13 (via Docker)
+- **IntelliJ IDEA** (recommended) or VS Code with Kotlin plugin
+
+### Development Setup
+1. **Database**
+   - Run PostgreSQL via Docker: `docker-compose up -d postgres`
+   - Database will be available at `localhost:5432`
+   - Default credentials: postgres/postgres
+
+2. **Build & Run**
+   - Build project: `./gradlew clean build`
+   - Run application: `./gradlew bootRun`
+   - Run tests: `./gradlew test`
+   - Generate JOOQ classes: `./gradlew generateJooq`
+   - Generate OpenAPI clients: `./gradlew openApiGenerate`
+
+3. **Code Quality**
+   - Lint: `./gradlew ktlintCheck`
+   - Static analysis: `./gradlew detekt`
+   - Test coverage: `./gradlew jacocoTestReport`
+
+4. **API Documentation**
+   - Swagger UI: http://localhost:8080/swagger-ui.html
+   - OpenAPI JSON: http://localhost:8080/v3/api-docs
+   - Actuator: http://localhost:8080/actuator
 - Gradle 8.13
 - IntelliJ IDEA or VS Code with Kotlin plugin
 - PostgreSQL 15.13 (or Docker)

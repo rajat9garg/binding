@@ -6,8 +6,8 @@ import org.springframework.stereotype.Service
 
 @Service
 class HealthServiceImpl : HealthService {
-    override fun checkHealth(): HealthResponse {
-        return HealthResponse(
+    override fun checkHealth(): com.biding.models.dto.HealthResponse {
+        return com.biding.models.dto.HealthResponse(
             status = "UP"
         )
     }

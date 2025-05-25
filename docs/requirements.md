@@ -3,28 +3,129 @@ This project involves the design and development of a scalable, real-time online
 
 Functional Requirements
 User Registration
-
 Users can register using their phone number and name. [No Authentication is required of any kind]
 Basic validation must be in place to prevent duplicate registrations dedupe on phone number.
 
-Item Browsing
-Registered users can view a list of items available in ongoing and upcoming auctions.
-Each item should display relevant details: item name, description, auction start and end time, and current highest bid.
+✅ 2. Item & Auction Listing Module
+2.1. View Auctions
 
-Bidding Mechanism
-Users can place bids on items within the auction time window.
-Each bid must be higher than the current maximum bid.
-The system should ensure atomicity and consistency while updating bid values (to avoid race conditions).
+Endpoint: GET /auctions
+Input: Optional filters: status=[ONGOING|UPCOMING]
+
+Output:
+itemName, description, auctionStartTime, auctionEndTime, currentHighestBid
+
+Real-Time Requirements:
+Integrate with WebSockets for real-time updates on currentHighestBid.
+
+2.2. Fetch Auction Item Details
+Endpoint: GET /auctions/{itemId}
+Output:
+Same as above but specific to the item.
+
+Technical Notes:
+Cache item metadata with TTL for quick retrieval.
+Use CDN or in-memory cache for auction metadata.
 
 
-Non-Functional Requirements
-Scalability
-The platform must be able to handle at least 100,000 concurrent users without degradation in performance.
+✅ 3. Bidding Engine Module
+3.1. Place Bid
 
-Concurrency Handling
-The system must support simultaneous bidding operations, ensuring data integrity with proper synchronization or optimistic locking mechanisms.
-Real-Time Bid Updates
-The current highest bid on any item should be visible to all users in real-time, preferably using WebSockets or Server-Sent Events (SSE).
-Automated Auction Lifecycle
-The system must automatically declare the winner and close the auction when the predefined end time is reached.
-No further bids should be accepted after the auction ends.
+Endpoint: POST /bids
+
+Input: itemId, userId, bidAmount
+
+Validation:
+
+Ensure auction is ONGOING.
+
+Ensure bidAmount > currentHighestBid.
+
+Technical Implementation:
+
+Use atomic compare-and-set (CAS) or pessimistic locking (e.g., row-level lock or Redis SETNX) to ensure bid consistency.
+
+Ensure idempotency for retry-safe writes.
+
+3.2. Real-Time Bid Broadcast
+
+Mechanism: WebSocket or SSE push
+
+Trigger: On successful new highest bid
+
+Technical Requirements:
+
+Broadcast updated currentHighestBid, userId to all connected clients.
+
+Use pub/sub mechanism (Redis Pub/Sub, Kafka, etc.) behind WebSocket gateway for fanout.
+
+✅ 4. Auction Lifecycle Management
+4.1. Start Auction
+
+Trigger: System cron/scheduler OR real-time scheduler
+
+Action:
+
+Mark auction as ONGOING.
+
+Notify all clients subscribed to auction list.
+
+4.2. End Auction
+
+Trigger: Auto-triggered via background job at auctionEndTime
+
+Action:
+
+Mark auction as ENDED.
+
+Determine winner = highest bidder.
+
+Broadcast winner announcement.
+
+Technical Notes:
+
+Ensure transactional consistency when declaring winner and closing bidding.
+
+✅ 5. Concurrency & Scalability
+Concurrency Control
+
+Strategy:
+
+Use optimistic locking (version-based row update) OR
+
+Redis-based distributed lock per item for bid writes.
+
+Avoid DB-level bottlenecks.
+
+Testing Plan:
+
+Simulate 100,000 concurrent users with bid spikes.
+
+Scalability Plan
+
+Stateless API design using REST/WebSockets.
+
+Horizontal scaling behind load balancer.
+
+Redis/Kafka for decoupling real-time systems.
+
+DB sharding or partitioning for auction and bid tables.
+
+✅ 6. Monitoring and Observability
+Metrics to Track:
+
+Active auctions
+
+Total bids per second
+
+Real-time connection count (WebSocket/SSE)
+
+Alerts:
+
+Auction processing delays
+
+Bid update failures or lock contention
+
+Logging:
+
+Use structured logs with correlation IDs.

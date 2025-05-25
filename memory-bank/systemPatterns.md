@@ -24,13 +24,14 @@ The system follows a clean architecture approach with clear separation of concer
 ### Architecture Diagram
 ```mermaid
 graph TD
-    A[Client] --> B[UserController]
-    B --> C[UserService]
-    C --> D[UserRepository]
+    A[Client] --> B[ItemController]
+    B --> C[ItemService]
+    C --> D[ItemRepository]
     D --> E[(PostgreSQL)]
     
     subgraph Presentation Layer
     A
+    B
     end
     
     subgraph Application Layer
@@ -38,67 +39,100 @@ graph TD
     end
     
     subgraph Domain Layer
-    F[User]
+    F[Item]
+    G[Bid]
+    H[User]
     end
     
     subgraph Infrastructure Layer
     D
     E
+    I[JOOQ]
+    J[Flyway]
     end
     
     C -.-> F
+    C -.-> G
+    C -.-> H
+    D -.-> I
+    J --> E
 ```
 
 ## System Components
-### UserController
-- **Purpose:** Handle HTTP requests and responses for user-related operations
+### ItemController
+- **Purpose:** Handle HTTP requests and responses for auction item operations
 - **Responsibilities:**
   - Validate input DTOs
   - Map between DTOs and domain models
   - Handle HTTP status codes and error responses
   - Enforce API contracts
-- **Dependencies:** UserService, DTOs
+  - Pagination and sorting support
+- **Dependencies:** ItemService, DTOs, OpenAPI annotations
 
-### UserService
-- **Purpose:** Implement business logic for user operations
+### ItemService
+- **Purpose:** Implement business logic for auction item operations
 - **Responsibilities:**
-  - Enforce business rules
+  - Enforce auction business rules
   - Coordinate between domain objects and repositories
   - Handle transactions
   - Apply business validations
-- **Dependencies:** UserRepository, Domain Models
+  - Manage item lifecycle
+- **Dependencies:** ItemRepository, Domain Models, Event Publisher
 
-### UserRepository
-- **Purpose:** Abstract database operations
+### ItemRepository
+- **Purpose:** Abstract database operations for items and bids
 - **Responsibilities:**
-  - CRUD operations for User entity
-  - Query execution
+  - CRUD operations for Item and Bid entities
+  - Complex query execution with JOOQ
   - Data access optimizations
-- **Dependencies:** JOOQ, Database
+  - Pagination support
+- **Dependencies:** JOOQ, Database, Flyway
 
 ### Domain Models
 - **Purpose:** Represent core business entities and rules
 - **Key Entities:**
-  - User: Core user entity with validation rules
-  - Value Objects: PhoneNumber, Email (planned)
+  - `Item`: Represents an auction item with properties like title, description, status, timestamps
+  - `Bid`: Represents a bid placed on an item with amount, bidder, and timestamp
+  - `User`: System user who can list items and place bids
+- **Value Objects:**
+  - `Money`: Represents monetary values with currency
+  - `TimeRange`: Represents auction start/end times
+  - `ItemStatus`: Enum for item states (DRAFT, ACTIVE, SOLD, EXPIRED, CANCELLED)
 - **Responsibilities:**
   - Encapsulate business rules
   - Ensure data integrity
   - Provide domain-specific behavior
+  - Enforce invariants
 
 ## Data Flow
-### User Registration Flow
+### Item Listing Flow
 1. **Request Handling**
-   - Client sends POST request to `/api/v1/users/register` with user details
-   - Spring MVC routes request to `UserController.registerUser()`
+   - Client sends GET request to `/api/v1/items` with pagination parameters
+   - Spring MVC routes request to `ItemController.listItems()`
 
 2. **Input Validation**
-   - Spring Validation validates request DTO
-   - Custom validators check phone number format and uniqueness
+   - Spring Validation validates query parameters
+   - Custom validators check date ranges and status filters
 
 3. **Business Logic**
-   - `UserService.registerUser()` is called with validated data
-   - Service checks for duplicate phone numbers
+   - `ItemService.listItems()` is called with validated parameters
+   - Service applies business rules for filtering and sorting
+   - Pagination is handled at the service layer
+
+### Bid Placement Flow
+1. **Request Handling**
+   - Client sends POST request to `/api/v1/items/{id}/bids` with bid details
+   - Spring MVC routes request to `ItemController.placeBid()`
+
+2. **Input Validation**
+   - Request body is validated against BidRequest DTO
+   - Custom validators check bid amount and auction status
+
+3. **Business Logic**
+   - `ItemService.placeBid()` is called with validated data
+   - Service enforces bidding rules (e.g., minimum bid increment)
+   - Transaction ensures data consistency
+   - Event is published for bid placement
    - If valid, creates new User domain object
    - Saves user to database via `UserRepository`
 
@@ -112,69 +146,89 @@ graph TD
    - Server errors return 500 Internal Server Error
 
 ## Integration Patterns
-### Repository Pattern
-- **When to use:** Abstracting data access from business logic
+### Database Access
+- **Pattern:** Repository Pattern with JOOQ
 - **Implementation:**
-  - `UserRepository` interface defines data access contracts
-  - `JooqUserRepository` provides JOOQ implementation
-  - Domain models are independent of persistence details
-- **Example:**
-  ```kotlin
-  interface UserRepository {
-      fun save(user: User): User
-      fun findByPhoneNumber(phoneNumber: String): User?
-      fun existsByPhoneNumber(phoneNumber: String): Boolean
-  }
-  ```
+  - Type-safe SQL queries with Kotlin DSL
+  - Generated DAOs and POJOs
+  - Custom type bindings for Kotlin types
+  - Transaction management via Spring `@Transactional`
+  - Batch operations support
+  - Optimistic locking for concurrent updates
 
-### DTO Pattern
-- **When to use:** Decoupling API contracts from domain models
-- **Implementation:**
-  - Separate classes for API requests/responses
-  - Mappers convert between DTOs and domain models
-  - Prevents over-posting and information leakage
-- **Example:**
-  ```kotlin
-  // Request DTO
-  data class UserRegistrationRequest(
-      val phoneNumber: String,
-      val name: String,
-      val email: String? = null
-  )
-  
-  // Response DTO
-  data class UserResponse(
-      val id: Long,
-      val phoneNumber: String,
-      val name: String,
-      val email: String?,
-      val createdAt: Instant,
-      val updatedAt: Instant
-  )
-  ```
+### API Design
+- **Style:** RESTful with HATEOAS (planned)
+- **Versioning:** URI versioning (`/api/v1/...`)
+- **Documentation:** OpenAPI 3.0 with Swagger UI
+- **Error Handling:**
+  - Global exception handler
+  - Consistent error response format
+  - Proper HTTP status codes
+  - Error codes for client handling
+- **Validation:**
+  - Bean Validation (JSR-380)
+  - Custom validators
+  - Input sanitization
+  - Business rule validation
+
+### Event-Driven Architecture
+- **Pattern:** Publish-Subscribe
+- **Implementation:** Spring Events
+- **Use Cases:**
+  - Bid placed notifications
+  - Auction ending soon alerts
+  - Outbid notifications
+  - Item status updates
 
 ## Design Decisions
-### DDD-001 - Domain-Driven Design Approach
+### ARCH-001 - Clean Architecture with DDD
 **Date:** 2025-05-24  
 **Status:** Approved  
-**Context:** Need to model complex business rules around user registration and management  
-**Decision:** Adopt DDD principles with clear separation between domain, application, and infrastructure layers  
-**Consequences:** 
-  - Clear separation of concerns
-  - Business logic is testable and framework-agnostic
-  - More complex initial setup
-**Alternatives Considered:** Anemic domain model with service layer
+**Context:** Need to maintain separation of concerns and business logic encapsulation  
+**Decision:** Adopt Clean Architecture with Domain-Driven Design principles  
+**Rationale:**  
+- Clear separation between domain logic and infrastructure  
+- Improved testability of business rules  
+- Flexibility to change frameworks without affecting domain  
+- Better alignment with business requirements  
+**Consequences:**  
+- Additional mapping between layers  
+- Requires discipline to maintain boundaries  
+**Alternatives Considered:** Traditional layered architecture, Hexagonal Architecture
 
 ### ARCH-002 - JOOQ for Database Access
 **Date:** 2025-05-24  
 **Status:** Approved  
-**Context:** Need type-safe SQL queries with good Kotlin support  
-**Decision:** Use JOOQ as the primary database access layer  
-**Consequences:**
-  - Type-safe SQL queries
-  - Good Kotlin integration
-  - Additional build step for code generation
-**Alternatives Considered:** Spring Data JPA, Exposed, raw JDBC
+**Context:** Need for type-safe SQL queries with Kotlin in a domain-driven context  
+**Decision:** Use JOOQ with Kotlin DSL and custom repository pattern  
+**Rationale:**  
+- Compile-time SQL validation  
+- Kotlin DSL for type-safe queries  
+- Fine-grained control over SQL  
+- Good performance for complex auction queries  
+**Consequences:**  
+- Need to manage generated code  
+- Learning curve for JOOQ  
+**Alternatives Considered:**  
+- Spring Data JPA (less control over queries)  
+- Exposed (less mature)  
+- jOOQ with JPA (increased complexity)
+
+### ARCH-003 - Event-Driven Architecture
+**Date:** 2025-05-24  
+**Status:** Approved  
+**Context:** Need for loose coupling between auction components  
+**Decision:** Implement event-driven patterns for auction lifecycle events  
+**Rationale:**  
+- Decouples auction logic from notification systems  
+- Enables future extensibility  
+- Better scalability for high-bid-volume scenarios  
+**Consequences:**  
+- Additional complexity in event handling  
+- Need for idempotent event processing  
+**Alternatives Considered:**  
+- Direct method calls (tighter coupling)  
+- Message queues (overkill for current scale)
 
 ### API-003 - RESTful API Design
 **Date:** 2025-05-24  

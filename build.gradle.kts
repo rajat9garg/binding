@@ -133,12 +133,18 @@ tasks.named("compileKotlin") {
     dependsOn("generateJooq")
 }
 
+tasks.named("generateJooq") {
+    dependsOn("flywayMigrate")
+}
 dependencies {
     // Spring Boot Starters
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("javax.validation:validation-api:2.0.1.Final")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.springframework.data:spring-data-commons")
     
     // JOOQ
     implementation("org.springframework.boot:spring-boot-starter-jooq")
