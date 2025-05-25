@@ -160,6 +160,10 @@ dependencies {
     // OpenAPI / Swagger
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
     implementation("org.openapitools:jackson-databind-nullable:0.2.6")
+    // WebSocket
+    implementation("org.springframework.boot:spring-boot-starter-websocket")
+    implementation("org.webjars:sockjs-client:1.5.1")
+    implementation("org.webjars:stomp-websocket:2.3.4")
 
 	jooqGenerator("org.jooq:jooq-codegen:3.19.3")
 jooqGenerator("org.jooq:jooq-meta:3.19.3")

@@ -157,7 +157,7 @@ class JooqItemRepository(
 ## 4. Service Layer
 
 ### 4.1 ItemService.kt
-```kotlin
+kotlin
 // domain/service/ItemService.kt
 package com.biding.domain.service
 

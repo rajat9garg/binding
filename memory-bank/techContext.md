@@ -448,6 +448,49 @@ testImplementation("io.kotest:kotest-property-jvm:5.8.0")
    - Use mutation testing to improve test quality
    - Review coverage reports regularly
 
+## WebSocket Implementation
+
+### Architecture
+- **WebSocket Endpoint:** `/ws/auction`
+- **Message Broker:** Simple in-memory broker
+- **Destination Prefixes:** `/app` for application destinations, `/topic` for subscriptions
+- **Allowed Origins:** Configured CORS for WebSocket connections
+
+### Key Components
+1. **AuctionWebSocketController**
+   - Handles WebSocket connections and message routing
+   - Manages auction-specific WebSocket operations
+   - Integrates with the auction service layer
+
+2. **WebSocketConnectionRepository**
+   - Manages WebSocket connection persistence
+   - Tracks active connections and their status
+   - Handles connection cleanup
+
+3. **WebSocketConnectionInterceptor**
+   - Intercepts WebSocket handshake requests
+   - Validates session tokens
+   - Associates WebSocket sessions with users
+
+### Message Flow
+1. Client connects to `/ws/auction`
+2. Handshake is intercepted for authentication
+3. On successful connection, session is registered
+4. Client subscribes to relevant topics
+5. Messages are routed through the message broker
+6. Session cleanup on disconnect
+
+### Dependencies
+- `spring-boot-starter-websocket` - Core WebSocket support
+- `spring-messaging` - For STOMP messaging
+- `spring-security-messaging` - WebSocket security
+
+### Testing WebSockets
+- Use `WebSocketTestClient` for integration testing
+- Test message publishing and subscription
+- Verify connection lifecycle events
+- Test error scenarios and reconnection logic
+
 2. **Mocking**
    - Use MockK for all mocking needs
    - Verify interactions with mocks

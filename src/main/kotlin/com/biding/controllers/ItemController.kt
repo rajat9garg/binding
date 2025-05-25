@@ -10,7 +10,6 @@ import com.biding.generated.model.ItemResponse
 import com.biding.generated.model.UpdateItemRequest
 import com.biding.services.ItemService
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
