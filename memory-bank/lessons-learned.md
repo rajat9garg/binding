@@ -1,11 +1,27 @@
 # Lessons Learned
 
 **Created:** 2025-05-24  
-**Last Updated:** 2025-05-24  
-**Last Updated By:** Bidding Platform Team  
-**Related Components:** Auction System, API Design, Database, ORM, Validation, Spring Boot, Real-time Bidding
+**Last Updated:** 2025-05-25  
+**Last Updated By:** Cascade AI Assistant  
+**Related Components:** User Management, Testing, Spring Boot, Kotlin, JOOQ, Database, API Design
 
-## Auction System Implementation
+## User Management Implementation
+
+### User Registration
+1. **Phone Number Validation**
+   - **Lesson:** E.164 format validation is crucial for international support
+   - **Example:** Implemented regex pattern `^\+[1-9]\d{1,14}$` for phone validation
+   - **Best Practice:** Store phone numbers in standardized format
+
+2. **Duplicate Detection**
+   - **Lesson:** Need for atomic check-and-create operation
+   - **Example:** Used database constraints with proper error handling
+   - **Best Practice:** Implement unique constraints at database level
+
+3. **Input Validation**
+   - **Lesson:** Kotlin's null safety helps prevent NPEs
+   - **Example:** Used Kotlin's null safety with Bean Validation
+   - **Best Practice:** Validate early and fail fast
 
 ### API Design
 1. **RESTful Endpoints**
@@ -28,27 +44,46 @@
    - **Example:** Implemented idempotency keys for bid requests
    - **Best Practice:** Use idempotency keys for all mutating operations
 
+## Testing Strategy
+
+### Unit Testing
+1. **Mocking with MockK**
+   - **Lesson:** MockK provides better Kotlin integration than Mockito
+   - **Example:** Used `every { }` and `verify { }` blocks for clear test cases
+   - **Best Practice:** Keep mock setup close to where it's used
+
+2. **Assertions**
+   - **Lesson:** AssertJ provides more readable assertions
+   - **Example:** Used `assertThat(actual).isEqualTo(expected)` pattern
+   - **Best Practice:** Use descriptive assertion messages
+
+3. **Test Data Builders**
+   - **Lesson:** Builders improve test readability
+   - **Example:** Created `UserBuilder` for test data
+   - **Best Practice:** Keep test data generation DRY
+
 ## Database & ORM Configuration
 
-### JOOQ for Auction System
-1. **Complex Query Handling**
-   - **Lesson:** JOOQ excels at complex auction queries (e.g., active listings, bid history)
-   - **Example:** Used JOOQ's DSL for time-based auction queries
-   - **Best Practice:** Create reusable query components
+### JOOQ Integration
+1. **Type-Safe Queries**
+   - **Lesson:** JOOQ's type-safe queries catch errors at compile time
+   - **Example:** `dsl.selectFrom(USERS).where(USERS.PHONE_NUMBER.eq(phoneNumber))`
+   - **Best Practice:** Always use generated code for table references
 
-2. **Type-Safe SQL**
-   - **Lesson:** Catch SQL errors at compile time
-   - **Example:** Generated Kotlin types for auction tables
-   - **Best Practice:** Regenerate code after schema changes
+2. **Kotlin Integration**
+   - **Lesson:** JOOQ works well with Kotlin data classes
+   - **Example:** Used `into(User::class.java)` for result mapping
+   - **Best Practice:** Create extension functions for common queries
 
 3. **Transaction Management**
-   - **Lesson:** Critical for bid processing
-   - **Example:** `@Transactional` with proper isolation levels
-   - **Best Practice:** Keep transactions short and focused
+   - **Lesson:** `@Transactional` works well with Spring's transaction management
+   - **Example:** Used `@Transactional(readOnly = true)` for read operations
+   - **Best Practice:** Handle transaction rollback for checked exceptions
 
-4. **JSONB Support**
-   - **Lesson:** Store flexible auction metadata
-   - **Example:** Item details as JSONB
+4. **Pagination**
+   - **Lesson:** Important for user lists and search results
+   - **Example:** Used JOOQ's `limit()` and `offset()` with Spring's `Pageable`
+   - **Best Practice:** Set reasonable default page sizes
    - **Best Practice:** Define JSON schemas for complex fields
 
 ### Performance Optimization
@@ -132,10 +167,17 @@
    - **Example:** PostgreSQL test container
    - **Best Practice:** Reuse containers
 
-2. **API Testing**
-   - **Lesson:** Test API contracts
-   - **Example:** REST Assured
-   - **Best Practice:** Test error cases
+## Code Quality & Maintenance
+
+1. **Static Analysis**
+   - **Lesson:** Detekt helps maintain code quality
+   - **Example:** Set up custom rules for project standards
+   - **Best Practice:** Run in CI pipeline
+
+2. **Documentation**
+   - **Lesson:** KDoc is essential for maintainability
+   - **Example:** Documented complex business logic with examples
+   - **Best Practice:** Keep docs close to the code
 
 ## Timestamp Handling
 
@@ -260,10 +302,17 @@
 ## Production Readiness
 
 ### Monitoring and Observability
-1. **Metrics**
-   - **Lesson:** Track key auction metrics
-   - **Example:** Bids per second
-   - **Best Practice:** Use Micrometer
+## Performance Considerations
+
+1. **Database Indexing**
+   - **Lesson:** Proper indexes are crucial for user lookups
+   - **Example:** Added index on `phone_number` for fast lookups
+   - **Best Practice:** Monitor slow queries
+
+2. **Caching**
+   - **Lesson:** Cache frequently accessed user data
+   - **Example:** Implemented Redis caching for user profiles
+   - **Best Practice:** Set appropriate TTLs
 
 2. **Logging**
    - **Lesson:** Structured logging

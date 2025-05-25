@@ -1,9 +1,9 @@
 # Project Brief
 
 **Created:** 2025-05-24  
-**Status:** [DRAFT]  
-**Author:** [Your Name]  
-**Last Modified:** 2025-05-24
+**Status:** ACTIVE  
+**Author:** Cascade AI Assistant  
+**Last Modified:** 2025-05-25
 
 ## Table of Contents
 - [Overview](#overview)
@@ -17,12 +17,14 @@
 - [Assumptions & Constraints](#assumptions--constraints)
 
 ## Overview
-[Brief project description and purpose]
+Bidding Platform is a modern web application that enables users to participate in online auctions. The platform allows users to browse items, place bids, and manage their auction activities. The system is built with a microservices architecture, focusing on scalability and reliability.
 
 ## Objectives
-- [Objective 1]
-- [Objective 2]
-- [Objective 3]
+- Provide a seamless bidding experience for users
+- Ensure data consistency and reliability in high-concurrency scenarios
+- Implement robust user authentication and authorization
+- Create a responsive and intuitive user interface
+- Ensure high performance and scalability
 
 ## Scope
 ### In Scope
@@ -34,11 +36,13 @@
 - [Excluded Feature/Component 2]
 
 ## Technical Stack
-- **Backend:** [Technology]
-- **Frontend:** [Technology]
-- **Database:** [Technology]
-- **Infrastructure:** [Technology]
-- **DevOps:** [Technology]
+- **Backend:** Spring Boot 3.5.0 with Kotlin 1.9.25
+- **Database:** PostgreSQL 15.13 with JOOQ 3.19.3
+- **API Documentation:** OpenAPI 3.0.3
+- **Build Tool:** Gradle 8.13 (Kotlin DSL)
+- **Testing:** JUnit 5, MockK, AssertJ, Testcontainers
+- **Containerization:** Docker
+- **CI/CD:** GitHub Actions
 
 ## Project Structure
 ```

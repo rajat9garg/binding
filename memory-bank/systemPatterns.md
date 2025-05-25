@@ -3,7 +3,7 @@
 **Created:** 2025-05-24  
 **Status:** [ACTIVE]  
 **Author:** Cascade AI Assistant  
-**Last Modified:** 2025-05-24
+**Last Modified:** 2025-05-25
 
 ## Table of Contents
 - [Architectural Overview](#architectural-overview)
@@ -15,40 +15,79 @@
 - [Scalability Considerations](#scalability-considerations)
 
 ## Architectural Overview
-The system follows a clean architecture approach with clear separation of concerns between layers:
-- **Presentation Layer**: Handles HTTP requests/responses, input validation, and API documentation
-- **Application Layer**: Contains use cases and business logic
-- **Domain Layer**: Core business entities and rules
-- **Infrastructure Layer**: Database access, external services, and framework-specific code
+The system follows a clean architecture approach with clear separation of concerns between layers, implemented using Spring Boot and Kotlin:
+
+### Layer Architecture
+1. **Presentation Layer**
+   - REST Controllers (`@RestController`)
+   - DTOs for request/response mapping
+   - Input validation using Bean Validation (JSR-380)
+   - Exception handling with `@ControllerAdvice`
+   - OpenAPI 3.0 documentation
+
+2. **Application Layer**
+   - Use case implementations (`@Service`)
+   - Transaction management (`@Transactional`)
+   - DTO to Domain model mapping
+   - Business logic orchestration
+
+3. **Domain Layer**
+   - Core business entities (Kotlin data classes)
+   - Value objects
+   - Domain events
+   - Repository interfaces
+   - Domain services
+
+4. **Infrastructure Layer**
+   - JOOQ for database access
+   - Flyway for database migrations
+   - External service clients
+   - Configuration classes
+   - Security configuration
 
 ### Architecture Diagram
 ```mermaid
 graph TD
-    A[Client] --> B[ItemController]
-    B --> C[ItemService]
-    C --> D[ItemRepository]
-    D --> E[(PostgreSQL)]
+    A[Client] --> B[API Gateway]
+    B --> C[Item Service]
+    B --> D[User Service]
+    B --> E[Payment Service]
     
-    subgraph Presentation Layer
-    A
+    subgraph "API Gateway (Spring Cloud Gateway)"
     B
     end
     
-    subgraph Application Layer
-    C
+    subgraph "Item Service"
+    C1[Item Controller] --> C2[Item Service]
+    C2 --> C3[Item Repository]
+    C2 --> C4[Event Publisher]
+    C3 --> C5[(PostgreSQL)]
     end
     
-    subgraph Domain Layer
-    F[Item]
-    G[Bid]
-    H[User]
+    subgraph "User Service"
+    D1[User Controller] --> D2[User Service]
+    D2 --> D3[User Repository]
+    D3 --> D4[(PostgreSQL)]
     end
     
-    subgraph Infrastructure Layer
-    D
-    E
-    I[JOOQ]
-    J[Flyway]
+    subgraph "Payment Service"
+    E1[Payment Controller] --> E2[Payment Service]
+    E2 --> E3[Payment Gateway Client]
+    E2 --> E4[Transaction Repository]
+    E4 --> E5[(PostgreSQL)]
+    end
+    
+    subgraph "Shared Infrastructure"
+    F[Service Registry]
+    G[Config Server]
+    H[Distributed Tracing]
+    I[Log Aggregation]
+    J[Metrics Collection]
+    end
+    
+    C4 -->|Publish Events| K[Message Broker]
+    K -->|Consume Events| D2
+    K -->|Consume Events| E2
     end
     
     C -.-> F
@@ -59,7 +98,301 @@ graph TD
 ```
 
 ## System Components
-### ItemController
+
+### Core Services
+1. **API Gateway**
+   - Single entry point for all client requests
+   - Request routing and load balancing
+   - Authentication and authorization
+   - Rate limiting and circuit breaking
+   - Request/Response transformation
+
+2. **Service Registry**
+   - Service discovery and registration
+   - Health monitoring
+   - Load balancing
+
+3. **Config Server**
+   - Centralized configuration management
+   - Environment-specific configurations
+   - Dynamic configuration refresh
+
+### Business Services
+1. **Item Service**
+   - Item CRUD operations
+   - Auction management
+   - Search functionality
+   - Image storage integration
+
+2. **User Service**
+   - User management
+   - Authentication and authorization
+   - Profile management
+   - Notification preferences
+
+3. **Bidding Service**
+   - Real-time bid processing
+   - Bid history
+   - Automatic bid increments
+   - Auction timers
+
+4. **Payment Service**
+   - Payment processing
+   - Payout management
+   - Refund processing
+   - Transaction history
+
+### Supporting Services
+1. **Notification Service**
+   - Email notifications
+   - Push notifications
+   - In-app messages
+   - Notification templates
+
+2. **Search Service**
+   - Full-text search
+   - Filtering and sorting
+   - Faceted search
+   - Search suggestions
+
+3. **Analytics Service**
+   - User behavior tracking
+   - Auction performance metrics
+   - Business intelligence
+   - Reporting
+
+### Infrastructure Components
+1. **PostgreSQL**
+   - Primary data store
+   - JOOQ for type-safe SQL
+   - Read replicas for scaling
+   - PITR (Point-in-Time Recovery)
+
+2. **Redis**
+   - Caching layer
+   - Session storage
+   - Rate limiting
+   - Pub/Sub for events
+
+3. **Kafka**
+   - Event streaming
+   - Asynchronous processing
+   - Event sourcing
+   - CQRS implementation
+
+4. **Elasticsearch**
+   - Full-text search
+   - Aggregations
+   - Analytics
+   - Logging
+
+## Data Flow
+
+### Request Flow
+1. **Client Request**
+   ```mermaid
+   sequenceDiagram
+       participant C as Client
+       participant G as API Gateway
+       participant S as Service
+       participant DB as Database
+       
+       C->>G: HTTP Request
+       G->>G: Authenticate & Authorize
+       G->>S: Forward Request
+       S->>DB: Query Data
+       DB-->>S: Return Data
+       S-->>G: Return Response
+       G-->>C: Return HTTP Response
+   ```
+
+2. **Event-Driven Flow**
+   ```mermaid
+   sequenceDiagram
+       participant S1 as Service 1
+       participant K as Kafka
+       participant S2 as Service 2
+       
+       S1->>K: Publish Event
+       K->>S2: Consume Event
+       S2->>S2: Process Event
+       S2->>S2: Update State
+   ```
+
+### Caching Strategy
+1. **Cache-Aside Pattern**
+   - Check cache first
+   - If miss, read from DB
+   - Update cache on write
+   - TTL for cache invalidation
+
+2. **Write-Through Cache**
+   - Write to cache and DB atomically
+   - Ensures consistency
+   - Higher write latency
+   - Better for read-heavy workloads
+
+### Database Access Patterns
+1. **Repository Pattern**
+   - Abstract data access
+   - Type-safe queries with JOOQ
+   - Transaction management
+   - Caching integration
+
+2. **CQRS Pattern**
+   - Separate read and write models
+   - Optimized queries for reads
+   - Event sourcing for writes
+   - Eventual consistency
+
+## Integration Patterns
+
+### Synchronous Communication
+1. **RESTful APIs**
+   - JSON over HTTP
+   - Standard status codes
+   - HATEOAS for discoverability
+   - Versioning in URL/headers
+
+2. **gRPC**
+   - High-performance RPC
+   - Protocol Buffers
+   - Bidirectional streaming
+   - Load balancing
+
+### Asynchronous Communication
+1. **Event-Driven Architecture**
+   - Domain events
+   - Event sourcing
+   - Event storming
+   - Event replay
+
+2. **Message Brokers**
+   - Kafka for event streaming
+   - RabbitMQ for message queuing
+   - Dead letter queues
+   - Retry mechanisms
+
+## Design Decisions
+
+### Technology Choices
+1. **Spring Boot**
+   - Rapid development
+   - Auto-configuration
+   - Production-ready features
+   - Strong community support
+
+2. **Kotlin**
+   - Null safety
+   - Extension functions
+   - Coroutines for async
+   - Interoperability with Java
+
+3. **JOOQ**
+   - Type-safe SQL
+   - Kotlin DSL
+   - Compile-time query validation
+   - Powerful query building
+
+### Architecture Patterns
+1. **Microservices**
+   - Independent deployment
+   - Technology diversity
+   - Fault isolation
+   - Team autonomy
+
+2. **Domain-Driven Design**
+   - Bounded contexts
+   - Ubiquitous language
+   - Aggregates
+   - Domain events
+
+## Cross-Cutting Concerns
+
+### Security
+1. **Authentication**
+   - JWT-based
+   - OAuth 2.0 / OIDC
+   - Multi-factor auth
+   - Social login
+
+2. **Authorization**
+   - RBAC (Role-Based Access Control)
+   - ABAC (Attribute-Based Access Control)
+   - Fine-grained permissions
+   - Policy as code
+
+3. **Data Protection**
+   - Encryption at rest
+   - Encryption in transit (TLS 1.3)
+   - Secrets management
+   - Data masking
+
+### Observability
+1. **Logging**
+   - Structured logging (JSON)
+   - Correlation IDs
+   - Log levels
+   - Log aggregation (ELK stack)
+
+2. **Metrics**
+   - Prometheus for metrics
+   - Grafana for visualization
+   - Custom business metrics
+   - SLO monitoring
+
+3. **Tracing**
+   - Distributed tracing
+   - Span context propagation
+   - Latency analysis
+   - Error tracking
+
+## Scalability Considerations
+
+### Horizontal Scaling
+1. **Stateless Services**
+   - No session affinity required
+   - Container orchestration
+   - Auto-scaling groups
+   - Load balancing
+
+2. **Database Scaling**
+   - Read replicas
+   - Sharding
+   - Connection pooling
+   - Query optimization
+
+### Performance Optimization
+1. **Caching**
+   - Redis for caching
+   - CDN for static assets
+   - HTTP caching headers
+   - Cache invalidation
+
+2. **Asynchronous Processing**
+   - Background jobs
+   - Batch processing
+   - Event-driven architecture
+   - Non-blocking I/O
+
+### Resilience Patterns
+1. **Circuit Breaker**
+   - Fail fast
+   - Fallback mechanisms
+   - Automatic recovery
+   - Monitoring
+
+2. **Bulkhead**
+   - Resource isolation
+   - Thread pools
+   - Rate limiting
+   - Queue management
+
+3. **Retry Pattern**
+   - Exponential backoff
+   - Jitter
+   - Maximum retries
+   - Idempotent operations### ItemController
 - **Purpose:** Handle HTTP requests and responses for auction item operations
 - **Responsibilities:**
   - Validate input DTOs

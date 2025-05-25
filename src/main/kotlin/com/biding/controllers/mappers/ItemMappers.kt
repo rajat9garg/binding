@@ -29,6 +29,7 @@ fun CreateItemRequest.toModel(createdBy: Long): Item {
 
 fun Item.toResponse(): ItemResponse {
     return ItemResponse(
+        id = id!!,
         name = name,
         description = description,
         basePrice = basePrice,

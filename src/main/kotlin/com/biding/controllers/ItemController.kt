@@ -23,17 +23,6 @@ class ItemController(
 
     private val logger = org.slf4j.LoggerFactory.getLogger(ItemController::class.java)
 
-
-    @ExceptionHandler(IllegalArgumentException::class)
-    fun handleValidationException(e: IllegalArgumentException): ResponseEntity<Map<String, String>> {
-        return ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Validation failed")))
-    }
-
-    @ExceptionHandler(Exception::class)
-    fun handleGenericException(e: Exception): ResponseEntity<Map<String, String>> {
-        return ResponseEntity.status(500).body(mapOf("error" to "An unexpected error occurred"))
-    }
-
     override fun createItem(createItemRequest: CreateItemRequest): ResponseEntity<ItemResponse> {
         return try {
             // Validate auction times
@@ -52,10 +41,16 @@ class ItemController(
     }
 
     override fun getItem(id: Long): ResponseEntity<ItemResponse> {
-        val item = itemService.getItemById(id)
-            ?: return ResponseEntity.notFound().build()
+        try {
+            val item = itemService.getItemById(id)
+                ?: return ResponseEntity.notFound().build()
 
-        return ResponseEntity.ok(item.toItemResponse())
+            return ResponseEntity.ok(item.toItemResponse())
+        } catch (e: Exception) {
+            logger.error("Error fetching item", e)
+            throw e
+        }
+
     }
 
     override fun searchItems(

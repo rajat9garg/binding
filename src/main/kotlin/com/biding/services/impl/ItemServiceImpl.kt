@@ -77,12 +77,12 @@ class ItemServiceImpl(
 
     @Transactional(readOnly = true)
     override fun getItemById(id: Long): Item? {
-        logger.debug("Fetching item with id: $id")
+        logger.info("Fetching item with id: $id")
         return try {
             itemRepository.findById(id)?.also {
-                logger.debug("Found item with id: $id")
+                logger.info("Found item with id: $id")
             } ?: run {
-                logger.debug("Item not found with id: $id")
+                logger.error("Item not found with id: $id")
                 null
             }
         } catch (ex: Exception) {

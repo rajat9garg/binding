@@ -13,6 +13,7 @@ import java.math.BigDecimal
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import kotlin.random.Random
 
 @Repository
 class JooqItemRepository(

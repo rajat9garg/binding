@@ -21,4 +21,4 @@ logging:
     root: INFO
     org:
       springframework: INFO
-      jooq: DEBUG
+      jooq: INFO
